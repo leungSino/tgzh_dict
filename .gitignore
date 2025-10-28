@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+instance/
+.env
+.venv/
+env/
+venv/
+
+# FastAPI
+*.log
+*.pid
+
+# VSCode / PyCharm
+.idea/
+.vscode/
+
+# Node / Vue
+node_modules/
+dist/
+*.local
+
+# System
+.DS_Store
+Thumbs.db
