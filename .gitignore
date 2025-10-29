@@ -1,28 +1,17 @@
 # Python
+.venv/
+venv/
 __pycache__/
 *.pyc
-*.pyo
-*.pyd
-*.db
-*.sqlite3
-instance/
 .env
-.venv/
-env/
-venv/
 
-# FastAPI
-*.log
-*.pid
-
-# VSCode / PyCharm
-.idea/
-.vscode/
-
-# Node / Vue
+# Node
 node_modules/
 dist/
-*.local
+
+# IDE
+.idea/
+.vscode/
 
 # System
 .DS_Store

@@ -37,56 +37,77 @@
 
 ---
 
-## 🧩 项目结构
+
+## 📂 项目结构
+
+```bash
 
 tgzh_dict/
-
+├── backend/
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── db.py
+│   │   ├── utils.py
+│   │   ├── models/
+│   │   │   ├── user_model.py
+│   │   │   └── word_model.py
+│   │   ├── services/
+│   │   │   ├── auth_service.py
+│   │   │   ├── word_service.py
+│   │   │   └── log_service.py
+│   │   └── routes/
+│   │       ├── auth_routes.py
+│   │       ├── word_routes.py
+│   │       └── log_routes.py
+│   ├── requirements.txt
+│   └── run.sh
 │
-
-├── backend/ # 后端目录 (FastAPI)
-
-│ ├── main.py # 项目入口
-
-│ ├── models/ # 数据模型定义
-
-│ ├── routes/ # 路由 (API 接口)
-
-│ ├── services/ # 服务逻辑
-
-│ ├── database.py # MongoDB 连接
-
-│ ├── auth/ # 用户登录与权限管理
-
-│ └── utils/ # 工具与日志
-
+├── frontend/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── src/
+│       ├── main.js
+│       ├── App.vue
+│       ├── assets/
+│       │    └── style.css
+│       ├── router/
+│       │    └── index.js
+│       ├── store/
+│       │    └── userStore.js
+│       ├── api/
+│       │    └── api.js
+│       ├── views/
+│       │    ├── HomeView.vue
+│       │    ├── LoginView.vue
+│       │    └── AdminDashboard.vue
+│       └── components/
+│            ├── Navbar.vue
+│            ├── WordForm.vue
+│            ├── WordTable.vue
+│            └── AdminLogs.vue
 │
-
-├── frontend/ # 前端目录 (Vue 3)
-
-│ ├── src/
-
-│ │ ├── views/ # 页面 (登录、词典、统计等)
-
-│ │ ├── components/ # 可复用组件
-
-│ │ ├── store/ # Vuex / Pinia 状态管理
-
-│ │ ├── router/ # 路由配置
-
-│ │ ├── api/ # 前端请求封装
-
-│ │ └── assets/ # 静态资源
-
-│ └── vite.config.js
-
-│
-
 ├── .gitignore
+└── README.md
+```
 
-├── requirements.txt # Python 依赖
+## 快速启动（后端）
+```bash
 
-├── package.json # 前端依赖
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export MONGO_URI="mongodb://localhost:27017"
+export JWT_SECRET="change_this_secret"
+uvicorn app.main:app --reload
 
-├── README.md # 项目说明文件
-
-└── LICENSE # 开源协议（MIT / Apache 2.0）
+## 前端
+cd frontend
+npm install
+npm run dev
+```
+访问:
+- 前端: http://localhost:5173
+- 后端 docs: http://localhost:8000/docs

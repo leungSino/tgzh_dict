@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 全局样式 */
+body {
+  @apply bg-gray-50 text-gray-900 font-sans min-h-screen flex flex-col;
+}
+
+/* 顶部导航栏 */
+.navbar {
+  @apply flex items-center justify-between bg-white shadow-md px-6 py-3 sticky top-0 z-10;
+}
+
+/* 主容器 */
+.main-container {
+  @apply flex flex-col items-center justify-start flex-1 p-6;
+}
+
+/* 翻译卡片区域 */
+.translate-card {
+  @apply bg-white shadow-lg rounded-2xl p-6 w-full max-w-4xl;
+}
+
+/* 输入区和输出区 */
+.textarea {
+  @apply w-full h-40 border border-gray-300 rounded-xl p-4 resize-none text-lg focus:ring-2 focus:ring-blue-500 focus:outline-none;
+}
+
+/* 语言选择栏 */
+.lang-select-bar {
+  @apply flex justify-between items-center mb-4;
+}
+
+.lang-select {
+  @apply flex items-center gap-2;
+}
+
+.lang-btn {
+  @apply bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg hover:bg-blue-100 hover:text-blue-600 transition;
+}
+
+.lang-btn-active {
+  @apply bg-blue-600 text-white font-semibold;
+}
+
+/* 按钮 */
+.btn {
+  @apply bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition font-medium;
+}
+
+/* 分隔线 */
+.divider {
+  @apply my-6 border-t border-gray-200;
+}
+
+/* 输出文本 */
+.output {
+  @apply text-lg bg-gray-50 border border-gray-200 rounded-xl p-4 min-h-[6rem];
+}
