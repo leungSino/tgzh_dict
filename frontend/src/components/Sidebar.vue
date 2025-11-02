@@ -1,7 +1,10 @@
 <template>
-  <aside :class="['fixed top-16 left-0 h-[calc(100vh-4rem)] flex flex-col bg-white dark:bg-gray-800 border-r dark:border-gray-700 transition-all duration-300 z-30',
-                   collapsed ? 'w-20' : 'w-64']">
-    <!-- 顶部: 折叠按钮 + 标题 -->
+  <aside
+    :class="[
+      'fixed left-0 top-16 h-[calc(100vh-4rem)] flex flex-col bg-white dark:bg-gray-800 border-r dark:border-gray-700 transition-all duration-300 z-30',
+      collapsed ? 'w-20' : 'w-64'
+    ]"
+  >
     <div class="flex items-center justify-between p-4 border-b dark:border-gray-700">
       <span v-if="!collapsed" class="font-bold text-lg text-blue-600">控制面板</span>
       <button @click="$emit('update:collapsed', !collapsed)"
@@ -10,22 +13,24 @@
       </button>
     </div>
 
-    <!-- 导航列表 -->
-    <div class="flex-1 flex flex-col overflow-y-auto">
-      <button v-for="item in items" :key="item.view" @click="$emit('navigate', item.view)"
-              :class="['flex items-center w-full text-left px-3 py-2 rounded-lg transition-colors',
-                       'hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200',
-                       activeView===item.view ? 'bg-blue-100 dark:bg-gray-700 font-semibold' : '']">
-        <i :class="['text-blue-500 w-5 text-center', item.icon]"></i>
+    <div class="flex-1 overflow-y-auto px-2 py-3 space-y-1">
+      <button
+        v-for="item in items"
+        :key="item.view"
+        @click="$emit('navigate', item.view)"
+        :class="[
+          'flex items-center w-full text-left px-3 py-2 rounded-lg transition-colors',
+          'hover:bg-blue-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200',
+          activeView === item.view ? 'bg-blue-100 dark:bg-gray-700 font-semibold' : ''
+        ]"
+      >
+        <i :class="['w-5 text-center text-blue-500', item.icon]"></i>
         <span v-if="!collapsed" class="ml-3 truncate">{{ item.label }}</span>
       </button>
     </div>
 
-    <!-- 底部版权 -->
-    <div class="flex flex-col p-3 border-t dark:border-gray-700">
-      <p v-if="!collapsed" class="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-        © 2025 Polyglot Dict
-      </p>
+    <div class="border-t dark:border-gray-700 p-3">
+      <p v-if="!collapsed" class="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">© 2025 Polyglot Dict</p>
     </div>
   </aside>
 </template>
