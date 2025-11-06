@@ -36,7 +36,7 @@ import Navbar from './Navbar.vue'
 import Sidebar from './Sidebar.vue'
 import WordManager from './WordManager.vue'
 import UserManager from './UserManager.vue'
-import LogViewer from './LogViewer.vue'
+import LogManager from './LogManager.vue'
 
 const currentView = ref('WordManager')
 const sidebarOpen = ref(false)

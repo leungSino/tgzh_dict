@@ -42,6 +42,6 @@ defineEmits(['update:collapsed', 'navigate'])
 const items = [
   { label: '词汇管理', view: 'WordManager', icon: 'fas fa-book' },
   { label: '用户管理', view: 'UserManager', icon: 'fas fa-users' },
-  { label: '操作日志', view: 'LogViewer', icon: 'fas fa-file-alt' },
+  { label: '操作日志', view: 'LogManager', icon: 'fas fa-file-alt' },
 ]
 </script>

@@ -26,7 +26,7 @@
     @confirm="confirmDelete"
     @cancel="showDeleteModal = false"
   >
-    <p>确定要删除该日志吗？此操作不可恢复。</p>
+    <p class="text-red-500" >确定要删除该日志吗？此操作不可恢复。</p>
   </DeleteConfirm>
 
   <!-- 清空日志弹窗 -->

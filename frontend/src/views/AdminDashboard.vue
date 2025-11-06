@@ -16,7 +16,7 @@ import { ref, computed } from 'vue'
 import Sidebar from '@/components/Sidebar.vue'
 import WordManager from '@/components/WordManager.vue'
 import UserManager from '@/components/UserManager.vue'
-import LogViewer from '@/components/LogViewer.vue'
+import LogManager from '@/components/LogManager.vue'
 
 const activeTab = ref('WordManager')
 const sidebarCollapsed = ref(false)
@@ -25,7 +25,7 @@ const activeTabComponent = computed(() => {
   switch (activeTab.value) {
     case 'WordManager': return WordManager
     case 'UserManager': return UserManager
-    case 'LogViewer': return LogViewer
+    case 'LogManager': return LogManager
     default: return WordManager
   }
 })
