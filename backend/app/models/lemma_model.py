@@ -1,5 +1,6 @@
+# backend/app/models/lemma_model.py
 from pydantic import BaseModel, Field
-from typing import Dict, Any, Optional
+from typing import List, Dict, Any, Optional
 from datetime import datetime
 from bson import ObjectId
 
@@ -16,22 +17,25 @@ class PyObjectId(ObjectId):
         return ObjectId(v)
 
 
-class WordModel(BaseModel):
+class LemmaModel(BaseModel):
     id: Optional[PyObjectId] = Field(alias="_id")
-    sourceLang: str
-    targetLang: str
-    sourceText: str
     lemma: str
-    lemma_id: Optional[PyObjectId] = None
     root: Optional[str] = None
-    description: Optional[str] = None
-    translations: Optional[Dict[str, Any]] = None
+    isRoot: bool = False
+    pos: Optional[List[str]] = None
+    definition: Optional[Dict[str, str]] = None
+    conjugations: Optional[Dict[str, List[str]]] = None
+    examples: Optional[List[Dict[str, str]]] = None
+    derived: Optional[List[str]] = None
+    related: Optional[List[str]] = None
+    notes: Optional[str] = None
+    source: Optional[str] = None
+    status: str = Field(default="draft")  # draft / published / archived
 
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[str] = None
     updated_by: Optional[str] = None
-    status: str = Field(default="draft")  # draft / published / archived
 
     class Config:
         json_encoders = {ObjectId: str}
