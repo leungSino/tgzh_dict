@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import auth_routes, word_routes, log_routes, lemma_routes
+from .routes import auth_routes, word_routes, log_routes, lemma_routes
 from fastapi.staticfiles import StaticFiles
 import os
 

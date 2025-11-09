@@ -8,29 +8,40 @@
       <!-- 源语言 -->
       <div class="flex flex-col mb-4">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
-        <LangSelector
-          v-model="form.sourceLang"
-          class="w-full"
-        />
+        <LangSelector v-model="form.sourceLang" class="w-full" />
       </div>
 
       <!-- 目标语言 -->
       <div class="flex flex-col mb-4">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">目标语言</label>
-        <LangSelector
-          v-model="form.targetLang"
-          class="w-full"
-        />
+        <LangSelector v-model="form.targetLang" class="w-full" />
       </div>
 
       <!-- 原文 -->
       <div class="flex flex-col mb-4 relative">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原文</label>
+        <div class="flex items-center">
+          <input
+            type="text"
+            v-model="form.sourceText"
+            @blur="checkSourceExists"
+            placeholder="输入原文（失焦时检查条目是否已存在）"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
+          <span v-if="checkingSource" class="ml-3 text-sm text-gray-500">检查中…</span>
+          <span v-else-if="sourceExists === true" class="ml-3 text-sm text-green-600 dark:text-green-400">已有条目</span>
+          <span v-else-if="sourceExists === false && form.sourceText.trim()" class="ml-3 text-sm text-orange-600 dark:text-orange-400">未找到</span>
+        </div>
+      </div>
+
+      <!-- lemma -->
+      <div class="flex flex-col mb-4 relative">
+        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
         <input
           type="text"
-          v-model="form.sourceText"
-          @input="onInputLemma(form.sourceText)"
-          placeholder="输入原文"
+          v-model="form.lemma"
+          @input="onInputLemma(form.lemma)"
+          placeholder="输入原型词以搜索联想"
           class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
         />
         <ul
@@ -65,75 +76,120 @@
         <textarea
           v-model="form.description"
           placeholder="描述（释义、语法、说明）"
-          class="w-full border rounded px-3 py-2 h-24 resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
         />
       </div>
 
-      <!-- 多条翻译 -->
-      <div v-for="(t, index) in form.translations" :key="t.key" class="border rounded p-3 space-y-3 bg-gray-50 dark:bg-gray-800 transition-colors">
+      <!-- 状态 -->
+      <div class="flex flex-col mb-4">
+        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+        <select
+          v-model="form.status"
+          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+        >
+          <option value="draft">草稿</option>
+          <option value="published">发布</option>
+          <option value="archived">存档</option>
+        </select>
+      </div>
 
+      <!-- 多条翻译 -->
+      <div
+        v-for="(t, index) in form.translations"
+        :key="t.key"
+        @click="selectedTranslationIndex = index"
+        :class="[
+          'border rounded p-3 space-y-3 transition-colors cursor-pointer',
+          selectedTranslationIndex === index
+            ? 'bg-blue-100 dark:bg-blue-800 border-blue-500'
+            : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+        ]"
+      >
         <div class="flex justify-between items-center">
           <span class="font-semibold">翻译 {{ index + 1 }}</span>
-          <button type="button" @click="removeTranslation(index)" class="text-red-500 hover:text-red-700">&times;</button>
+          <button type="button" @click.stop="removeTranslation(index)" class="text-red-500 hover:text-red-700">&times;</button>
         </div>
 
         <!-- 翻译文本 -->
         <div class="flex flex-col">
           <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">翻译文本</label>
-          <input v-model="t.translation" placeholder="翻译文本" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600" />
+          <input
+            v-model="t.translation"
+            placeholder="翻译文本"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
         </div>
 
         <!-- 词性选择 -->
         <div class="flex flex-col">
           <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
-          <PosSelector
-            v-model="t.posArray"
-            class="w-full"
-            placeholder="请选择词性"
+          <PosSelector v-model="t.posArray" class="w-full" placeholder="请选择词性" />
+        </div>
+
+        <!-- 源语言释义 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ getLangLabel(form.sourceLang) }} 释义
+          </label>
+          <input
+            v-model="t.definition.source"
+            :placeholder="getLangLabel(form.sourceLang) + '释义'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
           />
         </div>
 
-        <!-- 中文释义 -->
+        <!-- 目标语言释义 -->
         <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">中文释义</label>
-          <input v-model="t.definition.zh" placeholder="中文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600" />
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ getLangLabel(form.targetLang) }} 释义
+          </label>
+          <input
+            v-model="t.definition.target"
+            :placeholder="getLangLabel(form.targetLang) + '释义'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
         </div>
 
-        <!-- 英文释义 -->
+        <!-- 源语言例句 -->
         <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">英文释义</label>
-          <input v-model="t.definition.en" placeholder="英文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600" />
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ getLangLabel(form.sourceLang) }} 例句
+          </label>
+          <textarea
+            v-model="t.context.source"
+            :placeholder="getLangLabel(form.sourceLang) + '例句'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          ></textarea>
         </div>
 
-        <!-- 塔吉克语例句 -->
+        <!-- 目标语言例句 -->
         <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">塔吉克语例句</label>
-          <textarea v-model="t.context.tg" placeholder="塔吉克语例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"></textarea>
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ getLangLabel(form.targetLang) }} 例句
+          </label>
+          <textarea
+            v-model="t.context.target"
+            :placeholder="getLangLabel(form.targetLang) + '例句'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          ></textarea>
         </div>
-
-        <!-- 中文例句 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">中文例句</label>
-          <textarea v-model="t.context.zh" placeholder="中文例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"></textarea>
-        </div>
-
       </div>
 
-      <button type="button" @click="addTranslation" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+      <!-- 添加按钮 -->
+      <button
+        type="button"
+        @click="addTranslation"
+        class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 mt-3"
+      >
         ➕ 添加翻译
       </button>
-
     </form>
 
     <template #footer>
       <button type="submit" @click="saveWord" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
         保存
       </button>
-      <button
-        type="button"
-        @click="$emit('close')"
-        class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500"
-      >
+      <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
         取消
       </button>
     </template>
@@ -141,16 +197,18 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import Modal from '@/components/Modal.vue'
 import LangSelector from '@/components/LangSelector.vue'
 import PosSelector from '@/components/PosSelector.vue'
+import { useUserStore } from '@/store/userStore.js'
 import api from '@/api/api.js'
 
 const props = defineProps({ editingWord: Object })
 const emit = defineEmits(['close', 'saved'])
+const user = useUserStore()
+const selectedTranslationIndex = ref(null)
 
-// 表单结构初始化
 const form = ref({
   _id: props.editingWord?._id || null,
   sourceLang: props.editingWord?.sourceLang || '',
@@ -160,31 +218,39 @@ const form = ref({
   lemma_id: props.editingWord?.lemma_id || null,
   root: props.editingWord?.root || '',
   description: props.editingWord?.description || '',
+  status: props.editingWord?.status || 'draft',
   translations: props.editingWord?.translations
     ? Object.entries(props.editingWord.translations).map(([key, val]) => ({
         key: key || crypto.randomUUID(),
         translation: val.translation || '',
         posArray: val.pos || [],
-        definition: val.definition || { zh: '', en: '' },
-        context: val.context || { tg: '', zh: '' }
+        definition: val.definition || { source: '', target: '' },
+        context: val.context || { source: '', target: '' }
       }))
     : []
 })
 
-// ✅ 词性选择：自动补全、输入提示
 const lemmaSuggestions = ref([])
 let debounceTimer = null
+const sourceExists = ref(null)
+const checkingSource = ref(false)
+
+function getLangLabel(code) {
+  const map = { zh: '中文', en: '英文', tg: '塔吉克语', ru: '俄语' }
+  return map[code] || code || '语言'
+}
 
 function onInputLemma(query) {
   clearTimeout(debounceTimer)
-  if (!query.trim()) {
-    lemmaSuggestions.value = []
-    return
-  }
+  if (!query?.trim()) return (lemmaSuggestions.value = [])
   debounceTimer = setTimeout(async () => {
-    const res = await api.searchLemmas(query)
-    lemmaSuggestions.value = res.data
-  }, 300)
+    try {
+      const res = await api.searchLemmas(query)
+      lemmaSuggestions.value = res.data || []
+    } catch {
+      lemmaSuggestions.value = []
+    }
+  }, 250)
 }
 
 function selectLemma(lemma) {
@@ -195,49 +261,59 @@ function selectLemma(lemma) {
   lemmaSuggestions.value = []
 }
 
-// ✅ 动态增删翻译
+async function checkSourceExists() {
+  const txt = form.value.sourceText.trim()
+  if (!txt) return
+  checkingSource.value = true
+  try {
+    const res = await api.findBySourceText(txt)
+    sourceExists.value = !!res.data
+  } finally {
+    checkingSource.value = false
+  }
+}
+
 function addTranslation() {
-  form.value.translations = [
-    ...form.value.translations,
-    {
-      key: crypto.randomUUID(),
-      translation: '',
-      posArray: [],
-      definition: { zh: '', en: '' },
-      context: { tg: '', zh: '' }
-    }
-  ]
+  form.value.translations.push({
+    key: crypto.randomUUID(),
+    translation: '',
+    posArray: [],
+    definition: { source: '', target: '' },
+    context: { source: '', target: '' }
+  })
 }
 
 function removeTranslation(index) {
-  form.value.translations = form.value.translations.filter((_, i) => i !== index)
+  form.value.translations.splice(index, 1)
 }
 
-// ✅ 保存逻辑
+/** 监听语言切换，清空 translations 对应字段 **/
+watch(
+  () => [form.value.sourceLang, form.value.targetLang],
+  ([newSource, newTarget], [oldSource, oldTarget]) => {
+    if (newSource !== oldSource || newTarget !== oldTarget) {
+      form.value.translations.forEach(t => {
+        // 清空源语言/目标语言释义
+        t.definition.source = ''
+        t.definition.target = ''
+        // 清空源语言/目标语言例句
+        t.context.source = ''
+        t.context.target = ''
+      })
+    }
+  }
+)
+
 async function saveWord() {
   const payload = {
-    _id: form.value._id,
-    sourceLang: form.value.sourceLang,
-    targetLang: form.value.targetLang,
-    sourceText: form.value.sourceText,
-    lemma: form.value.lemma,
-    lemma_id: form.value.lemma_id,
-    root: form.value.root,
-    description: form.value.description,
+    ...form.value,
     translations: form.value.translations.reduce((acc, t) => {
-      acc[t.key] = {
-        translation: t.translation,
-        pos: t.posArray,
-        definition: t.definition,
-        context: t.context
-      }
+      acc[t.key] = t
       return acc
     }, {})
   }
-
   if (form.value._id) await api.updateWord(form.value._id, payload)
   else await api.addWord(payload)
-
   emit('saved')
   emit('close')
 }

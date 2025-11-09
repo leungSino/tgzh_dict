@@ -36,7 +36,7 @@
         <input
           v-model="form.root"
           type="text"
-          placeholder="词根"
+          placeholder="词根（如 навис）"
           class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -53,49 +53,74 @@
         <PosSelector v-model="form.posArray" class="w-full"/>
       </div>
 
-      <!-- 释义 -->
-      <div class="space-y-2">
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">中文释义</label>
-        <textarea
-          v-model="form.definition.zh"
-          placeholder="中文释义"
-          class="w-full border rounded-md px-3 py-2 h-20 resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">英文释义</label>
-        <textarea
-          v-model="form.definition.en"
-          placeholder="英文释义"
-          class="w-full border rounded-md px-3 py-2 h-20 resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+      <!-- 释义（多语言） -->
+      <div class="space-y-3">
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">释义（多语言）</label>
+        <input v-model="form.definitions.tg" placeholder="塔吉克语释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+        <input v-model="form.definitions.zh" placeholder="中文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+        <input v-model="form.definitions.ru" placeholder="俄语释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+        <input v-model="form.definitions.en" placeholder="英文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+      </div>
+
+      <!-- 动词变位 -->
+      <div>
+        <label class="block mb-2 font-semibold text-gray-800 dark:text-white">动词变位</label>
+        <div class="space-y-3">
+          <div v-for="(forms, tense) in form.conjugations" :key="tense">
+            <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+              {{ tenseLabels[tense] }}
+            </label>
+            <textarea
+              v-model="form.conjugations[tenseStr(tense)]"
+              placeholder="以逗号分隔多个变位，如 навиштам, навиштӣ, навишт ..."
+              class="w-full border rounded-md px-3 py-2 h-16 resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
       </div>
 
       <!-- 示例句 -->
       <div>
         <label class="block mb-2 font-semibold text-gray-800 dark:text-white">示例句</label>
-        <div v-for="(ex, index) in form.examples" :key="ex.key" class="flex gap-2 mb-2">
-          <input
-            v-model="ex.tg"
-            placeholder="塔语句"
-            class="flex-1 border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <input
-            v-model="ex.zh"
-            placeholder="中文翻译"
-            class="flex-1 border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            @click="removeExample(index)"
-            class="bg-red-500 text-white px-3 rounded-md hover:bg-red-600"
-          >
-            删除
-          </button>
-        </div>
-        <button
-          type="button"
-          @click="addExample"
-          class="bg-green-600 text-white px-3 py-1 rounded-md hover:bg-green-700"
+
+        <div
+          v-for="(ex, index) in form.examples"
+          :key="ex.key"
+          :class="[
+            'border rounded p-3 space-y-3 transition-all cursor-pointer',
+            selectedExample === ex.key
+              ? 'bg-blue-50 dark:bg-blue-900 border-blue-500'
+              : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+          ]"
+          @click="selectedExample = ex.key"
         >
+          <div class="flex justify-between items-center">
+            <span class="font-semibold text-gray-800 dark:text-gray-100">示例 {{ index + 1 }}</span>
+            <button
+              type="button"
+              @click.stop="removeExample(index)"
+              class="text-red-500 hover:text-red-700 text-lg"
+            >
+              ×
+            </button>
+          </div>
+
+          <!-- 塔吉克语 -->
+          <textarea v-model="ex.tg" placeholder="塔吉克语句子" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <!-- 中文 -->
+          <textarea v-model="ex.zh" placeholder="中文翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <!-- 俄语 -->
+          <textarea v-model="ex.ru" placeholder="俄语翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <!-- 英语 -->
+          <textarea v-model="ex.en" placeholder="英文翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <!-- 词性 -->
+          <div>
+            <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">词性</label>
+            <PosSelector v-model="ex.pos" class="w-full"/>
+          </div>
+        </div>
+
+        <button type="button" @click="addExample" class="mt-3 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
           ➕ 添加示例句
         </button>
       </div>
@@ -107,39 +132,40 @@
           v-model="form.derivedStr"
           type="text"
           placeholder="派生词（用逗号分隔）"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <!-- 反义词 -->
+      <!-- 相关/反义词 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">反义词</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">相关或反义词</label>
         <input
           v-model="form.relatedStr"
           type="text"
-          placeholder="反义词（用逗号分隔）"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="如 хондан, фаҳмидан ..."
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+
+      <!-- 状态 -->
+      <div>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+        <select
+          v-model="form.status"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="draft">草稿</option>
+          <option value="published">已发布</option>
+          <option value="archived">存档</option>
+        </select>
       </div>
 
     </form>
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button
-          type="button"
-          @click="saveLemma"
-          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-        >
-          保存
-        </button>
-        <button
-          type="button"
-          @click="$emit('close')"
-          class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500"
-        >
-          取消
-        </button>
+        <button type="button" @click="saveLemma" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">保存</button>
+        <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500">取消</button>
       </div>
     </template>
   </Modal>
@@ -160,56 +186,58 @@ const form = ref({
   root: props.editingLemma?.root || '',
   isRoot: props.editingLemma?.isRoot || false,
   posArray: props.editingLemma?.pos || [],
-  definition: {
-    zh: props.editingLemma?.definition?.zh || '',
-    en: props.editingLemma?.definition?.en || ''
-  },
-  examples: props.editingLemma?.examples?.map(e => ({ ...e, key: crypto.randomUUID() })) || [],
+  definitions: props.editingLemma?.definitions || { tg:'', zh:'', ru:'', en:'' },
+  conjugations: props.editingLemma?.conjugations || { past: [], present: [], future: [] },
+  examples: props.editingLemma?.examples?.map(e => ({ ...e, key: crypto.randomUUID(), pos: e.pos || [] })) || [],
   derivedStr: (props.editingLemma?.derived || []).join(', '),
-  relatedStr: (props.editingLemma?.related || []).join(', ')
+  relatedStr: (props.editingLemma?.related || []).join(', '),
+  status: props.editingLemma?.status || 'draft'
 })
+
+const tenseLabels = { past: '过去式', present: '现在式', future: '将来式' }
+function tenseStr(t) { return t }
 
 const suggestions = ref([])
 let debounceTimer = null
-
-function onInput(query) {
+function onInput(query){
   clearTimeout(debounceTimer)
-  if (!query.trim()) {
-    suggestions.value = []
-    return
-  }
-  debounceTimer = setTimeout(async () => {
+  if(!query.trim()){ suggestions.value=[]; return }
+  debounceTimer = setTimeout(async ()=>{
     const res = await api.searchLemmas(query)
-    suggestions.value = res.data.map(i => i.lemma)
-  }, 300)
+    suggestions.value = res.data.map(i=>i.lemma)
+  },300)
+}
+function selectSuggestion(word){ form.value.lemma=word; suggestions.value=[] }
+
+const selectedExample = ref(null)
+function addExample(){
+  const newEx = { tg:'', zh:'', ru:'', en:'', pos:[], key: crypto.randomUUID() }
+  form.value.examples.push(newEx)
+  selectedExample.value = newEx.key
+}
+function removeExample(index){
+  const removed = form.value.examples.splice(index,1)
+  if(selectedExample.value===removed[0]?.key) selectedExample.value=null
 }
 
-function selectSuggestion(word) {
-  form.value.lemma = word
-  suggestions.value = []
-}
-
-function addExample() {
-  form.value.examples.push({ tg: '', zh: '', key: crypto.randomUUID() })
-}
-function removeExample(index) {
-  form.value.examples.splice(index, 1)
-}
-
-async function saveLemma() {
+async function saveLemma(){
   const payload = {
     _id: form.value._id,
     lemma: form.value.lemma,
     root: form.value.root,
     isRoot: form.value.isRoot,
     pos: form.value.posArray,
-    definition: { ...form.value.definition },
-    examples: form.value.examples.filter(e => e.tg && e.zh).map(({tg, zh}) => ({tg, zh})),
-    derived: form.value.derivedStr.split(',').map(s => s.trim()).filter(Boolean),
-    related: form.value.relatedStr.split(',').map(s => s.trim()).filter(Boolean)
+    definitions: form.value.definitions,
+    conjugations: Object.fromEntries(
+      Object.entries(form.value.conjugations).map(([t,v])=>[t,v.toString().split(',').map(s=>s.trim()).filter(Boolean)])
+    ),
+    examples: form.value.examples.filter(e=>e.tg && e.zh).map(({tg, zh, ru, en, pos})=>({tg, zh, ru, en, pos})),
+    derived: form.value.derivedStr.split(',').map(s=>s.trim()).filter(Boolean),
+    related: form.value.relatedStr.split(',').map(s=>s.trim()).filter(Boolean),
+    status: form.value.status
   }
 
-  if (form.value._id) await api.updateLemma(form.value._id, payload)
+  if(form.value._id) await api.updateLemma(form.value._id, payload)
   else await api.addLemma(payload)
 
   emit('saved')
