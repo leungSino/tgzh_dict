@@ -24,11 +24,13 @@ export const useUserStore = defineStore('user', {
           return true
         } else {
           this.logout()
-          return false
+          // 如果后端有 detail，透传
+          return res?.detail || false
         }
-      } catch {
+      } catch (err) {
         this.logout()
-        return false
+        // 返回后端错误信息
+        return err.response?.data || false
       }
     },
     logout() {
@@ -40,7 +42,6 @@ export const useUserStore = defineStore('user', {
       localStorage.removeItem('username')
       localStorage.removeItem('role')
     },
-    // 页面刷新时调用
     restore() {
       const token = localStorage.getItem('token')
       const username = localStorage.getItem('username')

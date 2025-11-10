@@ -55,15 +55,29 @@ const login = async () => {
   loading.value = true
   try {
     const ok = await userStore.login(username.value, password.value)
-    if (ok) router.push('/admin')
-    else errors.server = '用户名或密码错误'
-  } catch {
-    errors.server = '登录失败，请稍后重试'
+
+    if (ok === true) {
+      router.push('/admin')
+    }
+    // 后端返回 403 或 400，响应里有 detail 字段
+    else if (ok?.detail === 'Account disabled') {
+      errors.server = '账号已停用，请联系管理员'
+    } else {
+      errors.server = '用户名或密码错误'
+    }
+  } catch (err) {
+    // axios 异常捕获
+    if (err?.response?.data?.detail === 'Account disabled') {
+      errors.server = '账号已停用，请联系管理员'
+    } else {
+      errors.server = '登录失败，请稍后重试'
+    }
   } finally {
     loading.value = false
   }
 }
 </script>
+
 
 <style scoped>
 /* 可选局部样式 */

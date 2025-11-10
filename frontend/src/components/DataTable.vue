@@ -1,3 +1,4 @@
+<!-- 用于少量数据的模版 -->
 <template>
   <div class="shadow rounded-lg p-4 bg-white dark:bg-gray-800 text-gray-700 dark:text-white transition-colors">
     <div class="flex justify-between items-center mb-4">

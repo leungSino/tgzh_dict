@@ -2,6 +2,7 @@ from ..db import logs_col
 from datetime import datetime
 from fastapi import Request
 
+
 async def create_log(user: str, role: str, action: str, target_collection: str,
                      target_id: str, summary: str, request: Request = None, note: str = "", diff: dict = None):
     try:

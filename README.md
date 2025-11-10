@@ -51,14 +51,14 @@ tgzh_dict/
 │   │   ├── utils.py
 │   │   ├── models/
 │   │   │   ├── user_model.py
-│   │   │   └── word_model.py
+│   │   │   └── translation_model.py
 │   │   ├── services/
-│   │   │   ├── auth_service.py
-│   │   │   ├── word_service.py
+│   │   │   ├── user_service.py
+│   │   │   ├── translation_service.py
 │   │   │   └── log_service.py
 │   │   └── routes/
 │   │       ├── auth_routes.py
-│   │       ├── word_routes.py
+│   │       ├── translation_routes.py
 │   │       └── log_routes.py
 │   ├── requirements.txt
 │   └── run.sh
