@@ -4,7 +4,6 @@ from ..models.user_model import UserCreate
 from ..services.log_service import create_log
 from datetime import datetime
 from fastapi import Request
-from typing import Optional
 
 
 # 注册用户

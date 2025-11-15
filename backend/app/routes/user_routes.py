@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query, Depends, Request, HTTPException, Body
 from typing import Optional
 from ..models.user_model import UserCreate
-from ..services.user_service import register_user, get_users, update_user_by_username, get_user_by_username, \
+from ..services.user_service import register_user, update_user_by_username, get_user_by_username, \
     delete_user_by_username, check_username_exists
 from ..utils import decode_token
 from ..db import users_col
