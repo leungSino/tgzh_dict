@@ -31,6 +31,7 @@ class ContextModel(BaseModel):
 class TranslationItemModel(BaseModel):
     key: Optional[str] = None  # 前端生成的 UUID，不强制
     translation: str
+    searchTexts: Optional[List[str]] = Field(default_factory=list)
     posArray: Optional[List[str]] = Field(default_factory=list)
     definition: Optional[DefinitionModel] = Field(default_factory=DefinitionModel)
     context: Optional[ContextModel] = Field(default_factory=ContextModel)

@@ -120,6 +120,21 @@
           />
         </div>
 
+        <!-- 搜索文本（searchTexts） -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            搜索匹配词（searchTexts）
+          </label>
+          <input
+            v-model="t.searchTextsText"
+            placeholder="多个词请用中文逗号或英文逗号分隔，例如：快, 快的, 迅速"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
+          <p class="text-xs text-gray-500 mt-1">
+            用于中文 → 其他语言反查，例如输入“快的”“迅速”“速度快”等都能命中。
+          </p>
+        </div>
+
         <!-- 词性选择 -->
         <div class="flex flex-col">
           <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
@@ -219,11 +234,20 @@ const form = ref({
   root: props.editingWord?.root || '',
   description: props.editingWord?.description || '',
   status: props.editingWord?.status || 'draft',
+
+  /* 读取 translations */
   translations: props.editingWord?.translations
     ? Object.entries(props.editingWord.translations).map(([key, val]) => ({
         key: key || crypto.randomUUID(),
         translation: val.translation || '',
-        posArray: val.pos || [],
+
+        // searchTexts 解析
+        searchTexts: Array.isArray(val.searchTexts) ? val.searchTexts : [],
+        searchTextsText: Array.isArray(val.searchTexts)
+          ? val.searchTexts.join(', ')
+          : '',
+
+        posArray: val.posArray || [],
         definition: val.definition || { source: '', target: '' },
         context: val.context || { source: '', target: '' }
       }))
@@ -277,6 +301,8 @@ function addTranslation() {
   form.value.translations.push({
     key: crypto.randomUUID(),
     translation: '',
+    searchTexts: [],
+    searchTextsText: '',
     posArray: [],
     definition: { source: '', target: '' },
     context: { source: '', target: '' }
@@ -293,10 +319,8 @@ watch(
   ([newSource, newTarget], [oldSource, oldTarget]) => {
     if (newSource !== oldSource || newTarget !== oldTarget) {
       form.value.translations.forEach(t => {
-        // 清空源语言/目标语言释义
         t.definition.source = ''
         t.definition.target = ''
-        // 清空源语言/目标语言例句
         t.context.source = ''
         t.context.target = ''
       })
@@ -305,6 +329,18 @@ watch(
 )
 
 async function saveWord() {
+  // 保存前先把 searchTextsText 拆成数组去重清洗
+  for (const t of form.value.translations) {
+    t.searchTexts = Array.from(
+      new Set(
+        (t.searchTextsText || '')
+          .split(/[,，;；、/\s]+/)
+          .map(s => s.trim())
+          .filter(Boolean)
+      )
+    )
+  }
+
   const payload = {
     ...form.value,
     translations: form.value.translations.reduce((acc, t) => {
@@ -312,8 +348,10 @@ async function saveWord() {
       return acc
     }, {})
   }
+
   if (form.value._id) await api.updateWord(form.value._id, payload)
   else await api.addWord(payload)
+
   emit('saved')
   emit('close')
 }

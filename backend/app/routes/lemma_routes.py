@@ -13,8 +13,8 @@ def require_admin(request: Request):
         raise HTTPException(status_code=401, detail="Not authenticated")
     token = auth.split(" ")[1]
     payload = decode_token(token)
-    if not payload or payload.get("role") != "admin":
-        raise HTTPException(status_code=403, detail="Admin only")
+    if not payload or payload.get("role") not in ["admin", "editor"]:
+        raise HTTPException(status_code=403, detail="Admin or Editor only")
     return payload
 
 

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Query, Depends, Request, HTTPException
 from typing import Optional
-from ..db import logs_col
+from ..services import log_service
+from ..models.log_model import LogListResponse
 from ..utils import decode_token
 
 router = APIRouter(prefix="/admin", tags=["admin"])
-
 
 def require_admin(request: Request):
     auth = request.headers.get("Authorization")
@@ -16,46 +16,24 @@ def require_admin(request: Request):
         raise HTTPException(status_code=403, detail="Admin only")
     return payload
 
-
-# -----------------------
-# 查询日志
-# -----------------------
-@router.get("/logs")
-async def get_logs(
-        skip: int = 0,
-        limit: int = 50,
-        user: Optional[str] = Query(None),
-        action: Optional[str] = Query(None),
-        current=Depends(require_admin)
+@router.get("/logs", response_model=LogListResponse)
+async def list_logs(
+    skip: int = 0,
+    limit: int = 50,
+    user: Optional[str] = Query(None),
+    action: Optional[str] = Query(None),
+    current=Depends(require_admin)
 ):
-    query = {}
-    if user:
-        query["user"] = {"$regex": user, "$options": "i"}
-    if action:
-        query["action"] = {"$regex": action, "$options": "i"}
+    return await log_service.get_logs(skip=skip, limit=limit, user=user, action=action)
 
-    cursor = logs_col.find(query).sort("timestamp", -1).skip(skip).limit(limit)
-    items = []
-    async for log in cursor:
-        log["_id"] = str(log["_id"])
-        items.append(log)
-    total = await logs_col.count_documents(query)
-    return {"items": items, "total": total}
-
-
-# -----------------------
-# 删除单条日志
-# -----------------------
 @router.delete("/logs/{log_id}")
-async def delete_log(log_id: str, current=Depends(require_admin)):
-    res = await logs_col.delete_one({"_id": log_id})
-    return {"deleted": res.deleted_count}
+async def remove_log(log_id: str, current=Depends(require_admin)):
+    deleted_count = await log_service.delete_log(log_id)
+    if deleted_count == 0:
+        raise HTTPException(status_code=404, detail="日志不存在")
+    return {"deleted": deleted_count}
 
-
-# -----------------------
-# 清空日志
-# -----------------------
 @router.delete("/logs")
-async def clear_logs(current=Depends(require_admin)):
-    res = await logs_col.delete_many({})
-    return {"deleted": res.deleted_count}
+async def remove_all_logs(current=Depends(require_admin)):
+    deleted_count = await log_service.clear_logs()
+    return {"deleted": deleted_count}

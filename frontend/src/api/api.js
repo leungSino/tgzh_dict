@@ -75,6 +75,14 @@ export async function toggleUserStatus(username, currentStatus, updated_by = 'ad
   return res
 }
 
+// 检查用户名是否存在
+export async function checkUsername(username) {
+  const res = await api.get('/admin/checkusername', {
+    params: { username }
+  })
+  return res.data
+}
+
 // -------------------
 // 翻译（Translations）管理
 // -------------------
@@ -220,6 +228,7 @@ export default {
   updateUser,
   deleteUser,
   toggleUserStatus,
+  checkUsername,
 
   // Words
   getWords,

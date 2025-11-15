@@ -22,6 +22,12 @@
         <!-- 桌面端 -->
         <div class="hidden sm:flex flex-wrap gap-2 justify-start">
           <button
+            @click="openViewModal(row)"
+            class="flex-1 min-w-[60px] px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-center"
+          >
+            查看
+          </button>
+          <button
             @click="openDeleteModal(row)"
             class="flex-1 min-w-[60px] px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-center"
           >
@@ -42,6 +48,12 @@
             class="absolute right-0 mt-1 bg-white border rounded shadow-lg z-10 flex flex-wrap gap-1 p-1"
             style="min-width: 120px;"
           >
+            <button
+              @click="openViewModal(row); closeMenu()"
+              class="flex-1 min-w-[60px] px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded text-center"
+            >
+              查看
+            </button>
             <button
               @click="openDeleteModal(row); closeMenu()"
               class="flex-1 min-w-[60px] px-2 py-1 text-white bg-red-500 hover:bg-red-600 rounded text-center"
@@ -72,12 +84,18 @@
     >
       <p class="text-red-600">⚠️ 确认要清空所有日志吗？此操作不可恢复！</p>
     </DeleteConfirm>
+    <LogDetailModal
+      v-if="showViewModal"
+      :log="currentLog"
+      @close="showViewModal = false"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import DataTableServer from './DataTableServer.vue'
+import LogDetailModal from '@/pages/admin/LogDetailModal.vue'
 import DeleteConfirm from '@/components/DeleteConfirm.vue'
 import api from '@/api/api.js'
 
@@ -92,6 +110,8 @@ const tableWrapper = ref(null)
 const showDeleteModal = ref(false)
 const showClearModal = ref(false)
 const pendingDeleteId = ref(null)
+const showViewModal = ref(false)
+const currentLog = ref({})
 
 // 控制移动端展开行
 const expandedRowId = ref(null)
@@ -114,6 +134,11 @@ async function fetchLogs(query, page, pageSize) {
   }
 }
 
+/** 查看日志 **/
+function openViewModal(row) {
+  currentLog.value = row
+  showViewModal.value = true
+}
 
 /** 刷新表格 **/
 function reloadTable() {

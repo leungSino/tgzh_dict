@@ -20,10 +20,12 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
 
   if (to.meta.requiresAdmin) {
-    if (userStore.isLoggedIn && userStore.role === 'admin') {
+    if (userStore.isLoggedIn &&
+      (userStore.role === 'admin' || userStore.role === 'editor')
+    ) {
       next()
     } else {
-      next('/login')
+      next('/')
     }
   } else {
     next()
