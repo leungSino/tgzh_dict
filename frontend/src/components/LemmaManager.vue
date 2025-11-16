@@ -21,6 +21,12 @@
         <!-- 桌面端 -->
         <div class="hidden sm:flex flex-wrap gap-2">
           <button
+            @click="viewForm(row)"
+            class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-all"
+          >
+            查看
+          </button>
+          <button
             @click="openForm(row)"
             class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 transition-all"
           >
@@ -49,6 +55,12 @@
               style="min-width: 120px;"
             >
               <button
+                @click="viewForm(row); closeMenu()"
+                class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              >
+                🔍 查看
+              </button>
+              <button
                 @click="openForm(row); closeMenu()"
                 class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
               >
@@ -73,6 +85,13 @@
       @close="closeForm"
       @saved="reloadTable"
     />
+    <!-- 只读查看弹窗 -->
+    <LemmaView
+      v-if="showView"
+      :viewingLemma="viewingLemma"
+      @close="closeView"
+    />
+
   </div>
 </template>
 
@@ -80,6 +99,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import DataTableServer from '@/components/DataTableServer.vue'
 import LemmaForm from '@/pages/admin/LemmaForm.vue'
+import LemmaView from '@/pages/admin/LemmaView.vue'
 import api from '@/api/api.js'
 
 const columns = [
@@ -95,6 +115,9 @@ const tableWrapper = ref(null)
 const showForm = ref(false)
 const editingLemma = ref(null)
 const expandedRowId = ref(null)
+
+const showView = ref(false)
+const viewingLemma = ref(null)
 
 /** 拉取数据 **/
 async function fetchLemmas(query, page, pageSize) {
@@ -114,6 +137,17 @@ async function fetchLemmas(query, page, pageSize) {
 /** 刷新表格 **/
 function reloadTable() {
   tableRef.value?.reload()
+}
+
+/** 查看操作 **/
+function viewForm(row) {
+  viewingLemma.value = row
+  showView.value = true
+}
+
+function closeView() {
+  showView.value = false
+  viewingLemma.value = null
 }
 
 /** 打开/关闭表单 **/

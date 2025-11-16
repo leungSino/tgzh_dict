@@ -4,7 +4,11 @@
     @close="$emit('close')"
   >
     <form @submit.prevent="saveLemma" class="space-y-6">
-
+      <!-- 语言种类 -->
+      <div class="flex flex-col mb-4">
+        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
+        <LangSelector v-model="form.language" class="w-full" />
+      </div>
       <!-- 原型词 -->
       <div class="relative">
         <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词</label>
@@ -53,13 +57,17 @@
         <PosSelector v-model="form.posArray" class="w-full"/>
       </div>
 
-      <!-- 释义（多语言） -->
+      <!-- 释义（多语言） - 自动根据源语言隐藏对应项 -->
       <div class="space-y-3">
         <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">释义（多语言）</label>
-        <input v-model="form.definitions.tg" placeholder="塔吉克语释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-        <input v-model="form.definitions.zh" placeholder="中文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-        <input v-model="form.definitions.ru" placeholder="俄语释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-        <input v-model="form.definitions.en" placeholder="英文释义" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+
+        <div v-for="lang in otherLangs" :key="lang">
+          <input
+            v-model="form.definitions[lang]"
+            :placeholder="langLabel[lang] + '释义'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
+        </div>
       </div>
 
       <!-- 动词变位 -->
@@ -106,13 +114,13 @@
           </div>
 
           <!-- 塔吉克语 -->
-          <textarea v-model="ex.tg" placeholder="塔吉克语句子" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <textarea v-model="ex.tg" placeholder="塔吉克语例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
           <!-- 中文 -->
-          <textarea v-model="ex.zh" placeholder="中文翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <textarea v-model="ex.zh" placeholder="中文例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
           <!-- 俄语 -->
-          <textarea v-model="ex.ru" placeholder="俄语翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <textarea v-model="ex.ru" placeholder="俄语例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
           <!-- 英语 -->
-          <textarea v-model="ex.en" placeholder="英文翻译" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
+          <textarea v-model="ex.en" placeholder="英文例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
           <!-- 词性 -->
           <div>
             <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">词性</label>
@@ -172,16 +180,26 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch, computed } from 'vue'
 import Modal from '@/components/Modal.vue'
 import PosSelector from '@/components/PosSelector.vue'
+import LangSelector from '@/components/LangSelector.vue'
 import api from '@/api/api.js'
 
 const props = defineProps({ editingLemma: Object })
 const emit = defineEmits(['close', 'saved'])
 
+// 语言标签
+const langLabel = { tg: "塔吉克语", zh: "中文", ru: "俄语", en: "英文" }
+
+// 自动计算除当前语言以外的三种
+const otherLangs = computed(() =>
+  ["tg", "zh", "ru", "en"].filter(l => l !== form.value.language)
+)
+
 const form = ref({
   _id: props.editingLemma?._id || null,
+  language: props.editingLemma?.language || 'tg',
   lemma: props.editingLemma?.lemma || '',
   root: props.editingLemma?.root || '',
   isRoot: props.editingLemma?.isRoot || false,
@@ -193,6 +211,22 @@ const form = ref({
   relatedStr: (props.editingLemma?.related || []).join(', '),
   status: props.editingLemma?.status || 'draft'
 })
+
+/* ------------------------------------
+   自动根据语言调整 definitions（核心逻辑）
+------------------------------------ */
+watch(
+  () => form.value.language,
+  (newLang) => {
+    const others = ["tg", "zh", "ru", "en"].filter(l => l !== newLang)
+
+    // 语言修改时清空 definitions，只保留其他三种语言
+    form.value.definitions = Object.fromEntries(
+      others.map(l => [l, ""])
+    )
+  },
+  { immediate: true }
+)
 
 const tenseLabels = { past: '过去式', present: '现在式', future: '将来式' }
 function tenseStr(t) { return t }
@@ -223,6 +257,7 @@ function removeExample(index){
 async function saveLemma(){
   const payload = {
     _id: form.value._id,
+    language: form.value.language,
     lemma: form.value.lemma,
     root: form.value.root,
     isRoot: form.value.isRoot,
@@ -244,3 +279,4 @@ async function saveLemma(){
   emit('close')
 }
 </script>
+

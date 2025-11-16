@@ -21,6 +21,12 @@
         <!-- 桌面端 -->
         <div class="hidden sm:flex flex-wrap gap-2">
           <button
+            @click="viewForm(row)"
+            class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-all"
+          >
+            查看
+          </button>
+          <button
             @click="openForm(row)"
             class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 transition-all"
           >
@@ -49,6 +55,12 @@
               style="min-width: 120px;"
             >
               <button
+                @click="viewForm(row); closeMenu()"
+                class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
+              >
+                🔍 查看
+              </button>
+              <button
                 @click="openForm(row); closeMenu()"
                 class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
               >
@@ -73,6 +85,12 @@
       @close="closeForm"
       @saved="reloadTable"
     />
+    <!-- 查看弹窗 -->
+    <TranslationView
+      v-if="showView"
+      :viewingWord="viewingTranslation"
+      @close="closeView"
+    />
   </div>
 </template>
 
@@ -80,6 +98,7 @@
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import DataTableServer from '@/components/DataTableServer.vue'
 import TranslationForm from '@/pages/admin/TranslationForm.vue'
+import TranslationView from '@/pages/admin/TranslationView.vue'
 import api from '@/api/api.js'
 
 const columns = [
@@ -95,6 +114,9 @@ const tableWrapper = ref(null)
 const showForm = ref(false)
 const editingTranslation = ref(null)
 const expandedRowId = ref(null) // 当前展开的菜单行 ID
+
+const showView = ref(false)
+const viewingTranslation = ref(null)
 
 /** 获取翻译数据 **/
 async function fetchTranslations(query, page, pageSize) {
@@ -119,6 +141,18 @@ async function fetchTranslations(query, page, pageSize) {
 function reloadTable() {
   tableRef.value?.reload()
 }
+
+/** 查看操作 **/
+function viewForm(row) {
+  viewingTranslation.value = row
+  showView.value = true
+}
+
+function closeView() {
+  showView.value = false
+  viewingTranslation.value = null
+}
+
 
 /** 表单操作 **/
 function openForm(row = null) {

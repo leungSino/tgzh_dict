@@ -8,7 +8,7 @@ db = client[DB_NAME]
 
 # Collection 定义
 users_col = db["users"]
-translations_col = db["translations"]  # 原 words_col
+translations_col = db["translations"]
 lemmas_col = db["lemmas"]
 logs_col = db["operation_logs"]
 
