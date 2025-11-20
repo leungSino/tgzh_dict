@@ -4,19 +4,6 @@ from typing import List, Optional
 from datetime import datetime
 from bson import ObjectId
 
-
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
-
-
 # === 子模型定义 ===
 class DefinitionModel(BaseModel):
     source: Optional[str] = ''
@@ -39,12 +26,11 @@ class TranslationItemModel(BaseModel):
 
 # === 主模型 ===
 class TranslationModel(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id")
     sourceLang: str
     targetLang: str
     sourceText: str
     lemma: Optional[str] = None
-    lemma_id: Optional[PyObjectId] = None
+    lemma_id: Optional[str] = None
     root: Optional[str] = None
     description: Optional[str] = None
 

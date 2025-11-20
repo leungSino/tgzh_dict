@@ -10,14 +10,29 @@ class TranslationService:
     def __init__(self, collection: AsyncIOMotorCollection):
         self.collection = collection
 
-    async def create_translation(self, data: dict, request: Request = None, user: str = None, role: str = None) -> dict:
+    async def create_translation(
+            self,
+            data: dict,
+            request: Request = None,
+            operator: str = None,
+            role: str = None
+    ) -> dict:
         data["created_at"] = datetime.utcnow()
         data["updated_at"] = datetime.utcnow()
+        data.pop("_id", None)  # MongoDB 自动生成 _id
+
         result = await self.collection.insert_one(data)
         doc = await self.collection.find_one({"_id": result.inserted_id})
+        doc["_id"] = str(doc["_id"])
 
-        await create_log(user=user, role=role, action="create", target_collection="translations",
-                         target_id=result.inserted_id, summary=data.get("sourceText", ""), request=request)
+        await create_log(
+            user=operator,
+            role=role,
+            action="create",
+            target_collection="translations",
+            target_id=result.inserted_id,
+            summary=data.get("sourceText", ""),
+            request=request)
         return doc
 
     async def get_translation(self, translation_id: str) -> Optional[dict]:
@@ -27,8 +42,14 @@ class TranslationService:
         cursor = self.collection.find().limit(limit)
         return await cursor.to_list(length=limit)
 
-    async def update_translation(self, translation_id: str, data: dict,
-                                 request: Request = None, user: str = None, role: str = None) -> Optional[dict]:
+    async def update_translation(
+            self,
+            translation_id: str,
+            data: dict,
+            request: Request = None,
+            operator: str = None,
+            role: str = None
+    ) -> Optional[dict]:
         old_doc = await self.get_translation(translation_id)
         if not old_doc:
             return None
@@ -38,17 +59,45 @@ class TranslationService:
         new_doc = await self.get_translation(translation_id)
 
         diff = {k: {"old": old_doc.get(k), "new": new_doc.get(k)} for k in data if old_doc.get(k) != new_doc.get(k)}
-        await create_log(user=user, role=role, action="update", target_collection="translations",
-                         target_id=translation_id, summary=new_doc.get("sourceText", ""), request=request, diff=diff)
+
+        await create_log(
+            user=operator,
+            role=role,
+            action="update",
+            target_collection="translations",
+            target_id=translation_id,
+            summary=new_doc.get("sourceText", ""),
+            request=request,
+            diff=diff
+        )
         return new_doc
 
-    async def delete_translation(self, translation_id: str, request: Request = None,
-                                 user: str = None, role: str = None) -> bool:
+    async def delete_translation(
+            self,
+            translation_id: str,
+            request: Request = None,
+            operator: str = None,
+            role: str = None
+    ) -> bool:
         doc = await self.get_translation(translation_id)
         if not doc:
             return False
+
         result = await self.collection.delete_one({"_id": ObjectId(translation_id)})
 
-        await create_log(user=user, role=role, action="delete", target_collection="translations",
-                         target_id=translation_id, summary=doc.get("sourceText", ""), request=request)
+        await create_log(
+            user=operator,
+            role=role,
+            action="delete",
+            target_collection="translations",
+            target_id=translation_id,
+            summary=doc.get("sourceText", ""),
+            request=request
+        )
         return result.deleted_count > 0
+
+    async def check_source_text(self, source_text: str) -> dict:
+        doc = await self.collection.find_one({"sourceText": source_text})
+        if doc:
+            return {"exists": True, "source_text_id": str(doc["_id"])}
+        return {"exists": False}

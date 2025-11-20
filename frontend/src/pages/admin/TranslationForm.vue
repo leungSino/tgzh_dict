@@ -20,44 +20,108 @@
       <!-- 原文 -->
       <div class="flex flex-col mb-4 relative">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原文</label>
-        <div class="flex items-center">
+        <div class="flex items-center relative w-full">
           <input
             type="text"
             v-model="form.sourceText"
             @blur="checkSourceExists"
-            placeholder="输入原文（失焦时检查条目是否已存在）"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+            :class="[
+              'w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white',
+              sourceTextExists === true
+                ? 'border-red-500 dark:border-red-400'
+                : sourceTextExists === false && form.sourceText.trim() && !checkingSourceText
+                  ? 'border-green-500 dark:border-green-400'
+                  : 'border-gray-300 dark:border-gray-600'
+            ]"
+            placeholder="输入原文"
           />
-          <span v-if="checkingSource" class="ml-3 text-sm text-gray-500">检查中…</span>
-          <span v-else-if="sourceExists === true" class="ml-3 text-sm text-green-600 dark:text-green-400">已有条目</span>
-          <span v-else-if="sourceExists === false && form.sourceText.trim()" class="ml-3 text-sm text-orange-600 dark:text-orange-400">未找到</span>
+
+          <!-- 右侧绿色对勾 -->
+          <span
+            v-if="!sourceTextExists && form.sourceText.trim() && !checkingSourceText"
+            class="absolute right-2 top-1/2 -translate-y-1/2 text-green-600 dark:text-green-400 font-bold"
+          >✔</span>
+
+          <!-- 检查中 -->
+          <span v-if="checkingSourceText" class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500">检查中…</span>
         </div>
+
+        <!-- 红色提示 -->
+        <p v-if="sourceTextExists" class="text-red-600 dark:text-red-400 text-sm mt-1">
+          已有该条目
+        </p>
       </div>
 
-      <!-- lemma -->
-      <div class="flex flex-col mb-4 relative">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
-        <input
-          type="text"
-          v-model="form.lemma"
-          @input="onInputLemma(form.lemma)"
-          placeholder="输入原型词以搜索联想"
-          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-        />
-        <ul
-          v-if="lemmaSuggestions.length"
-          class="absolute z-10 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 w-full rounded shadow mt-1 max-h-40 overflow-auto"
-        >
-          <li
-            v-for="s in lemmaSuggestions"
-            :key="s._id"
-            @click="selectLemma(s)"
-            class="px-3 py-2 hover:bg-blue-100 dark:hover:bg-blue-700 cursor-pointer"
-          >
-            {{ s.lemma }}
-          </li>
-        </ul>
+<!-- 原型词 lemma -->
+<div class="flex flex-col mb-4 relative">
+  <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
+  <div class="relative">
+    <input
+      ref="lemmaInputRef"
+      type="text"
+      v-model="form.lemma"
+      @input="onInputLemma(form.lemma)"
+      @focus="onLemmaFocus"
+      @blur="onLemmaBlur"
+      @keydown="onLemmaKeydown"
+      placeholder="输入原型词以搜索联想"
+      class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+    />
+
+    <!-- 加载指示器 -->
+    <div
+      v-if="lemmaLoading"
+      class="absolute right-2 top-1/2 -translate-y-1/2"
+    >
+      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+    </div>
+
+    <!-- 清空按钮 -->
+    <button
+      v-if="form.lemma && !lemmaLoading"
+      @click="clearLemma"
+      class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+    >
+      ×
+    </button>
+  </div>
+
+  <!-- 下拉框 -->
+  <div
+    v-if="showLemmaDropdown && lemmaSuggestions.length"
+    ref="lemmaDropdownRef"
+    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
+    style="top: 100%;"
+  >
+    <div
+      v-for="(s, index) in lemmaSuggestions"
+      :key="s._id"
+      @mousedown="selectLemma(s)"
+      :class="[
+        'px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors',
+        index === highlightedLemmaIndex
+          ? 'bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-200'
+          : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+      ]"
+    >
+      <div class="font-medium text-gray-900 dark:text-white">{{ s.lemma }}</div>
+      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        ID: {{ s._id }}
       </div>
+    </div>
+  </div>
+
+  <!-- 无结果提示 -->
+  <div
+    v-if="showLemmaDropdown && !lemmaLoading && lemmaSuggestions.length === 0 && form.lemma.trim()"
+    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg"
+    style="top: 100%;"
+  >
+    <div class="px-3 py-4 text-gray-500 dark:text-gray-400 text-sm text-center">
+      未找到匹配的原型词
+    </div>
+  </div>
+</div>
 
       <!-- 词根 -->
       <div class="flex flex-col mb-4">
@@ -89,7 +153,7 @@
         >
           <option value="draft">草稿</option>
           <option value="published">发布</option>
-          <option value="archived">存档</option>
+          <option value="archarchived">存档</option>
         </select>
       </div>
 
@@ -120,217 +184,159 @@
           />
         </div>
 
-        <!-- 搜索文本（searchTexts） -->
+        <!-- 搜索文本 -->
         <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-            搜索匹配词（searchTexts）
-          </label>
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">搜索匹配词</label>
           <input
             v-model="t.searchTextsText"
-            placeholder="多个词请用中文逗号或英文逗号分隔，例如：快, 快的, 迅速"
+            placeholder="多个词用逗号分隔"
             class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
           />
-          <p class="text-xs text-gray-500 mt-1">
-            用于中文 → 其他语言反查，例如输入“快的”“迅速”“速度快”等都能命中。
-          </p>
         </div>
 
-        <!-- 词性选择 -->
+        <!-- 词性 -->
         <div class="flex flex-col">
           <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
           <PosSelector v-model="t.posArray" class="w-full" placeholder="请选择词性" />
         </div>
 
-        <!-- 源语言释义 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ getLangLabel(form.sourceLang) }} 释义
-          </label>
-          <input
-            v-model="t.definition.source"
-            :placeholder="getLangLabel(form.sourceLang) + '释义'"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          />
-        </div>
-
-        <!-- 目标语言释义 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ getLangLabel(form.targetLang) }} 释义
-          </label>
-          <input
-            v-model="t.definition.target"
-            :placeholder="getLangLabel(form.targetLang) + '释义'"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          />
-        </div>
-
-        <!-- 源语言例句 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ getLangLabel(form.sourceLang) }} 例句
-          </label>
-          <textarea
-            v-model="t.context.source"
-            :placeholder="getLangLabel(form.sourceLang) + '例句'"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          ></textarea>
-        </div>
-
-        <!-- 目标语言例句 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
-            {{ getLangLabel(form.targetLang) }} 例句
-          </label>
-          <textarea
-            v-model="t.context.target"
-            :placeholder="getLangLabel(form.targetLang) + '例句'"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          ></textarea>
+        <!-- 源语言释义 & 例句 -->
+        <div v-for="lang of [form.sourceLang, form.targetLang]" :key="lang">
+          <div class="mb-2">
+            <label class="mb-1 text-sm">{{ getLangLabel(lang) }}释义</label>
+            <input
+              v-model="t.definition[lang === form.sourceLang ? 'source' : 'target']"
+              :placeholder="getLangLabel(lang) + '释义'"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+            />
+          </div>
+          <div>
+            <label class="mb">
+              {{ getLangLabel(lang) }}例句
+            </label>
+            <textarea
+              v-model="t.context[lang === form.sourceLang ? 'source' : 'target']"
+              :placeholder="getLangLabel(lang) + '例句'"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+            />
+          </div>
         </div>
       </div>
 
-      <!-- 添加按钮 -->
-      <button
-        type="button"
-        @click="addTranslation"
-        class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 mt-3"
-      >
+      <!-- 添加翻译 -->
+      <button type="button" @click="addTranslation" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
         ➕ 添加翻译
       </button>
     </form>
 
     <template #footer>
-      <button type="submit" @click="saveWord" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      <button type="submit" @click="saveWord" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700" :disabled="sourceTextExists || checkingSourceText">
         保存
       </button>
-      <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
-        取消
-      </button>
+      <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">取消</button>
     </template>
   </Modal>
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Modal from '@/components/Modal.vue'
 import LangSelector from '@/components/LangSelector.vue'
 import PosSelector from '@/components/PosSelector.vue'
-import { useUserStore } from '@/store/userStore.js'
 import api from '@/api/api.js'
+import { useUserStore } from '@/store/userStore.js'
 
-const props = defineProps({ editingWord: Object })
+const props = defineProps({ editingTranslation: Object })
 const emit = defineEmits(['close', 'saved'])
-const user = useUserStore()
+
+const userStore = useUserStore()
+
 const selectedTranslationIndex = ref(null)
 
 const form = ref({
-  _id: props.editingWord?._id || null,
-  sourceLang: props.editingWord?.sourceLang || '',
-  targetLang: props.editingWord?.targetLang || '',
-  sourceText: props.editingWord?.sourceText || '',
-  lemma: props.editingWord?.lemma || '',
-  lemma_id: props.editingWord?.lemma_id || null,
-  root: props.editingWord?.root || '',
-  description: props.editingWord?.description || '',
-  status: props.editingWord?.status || 'draft',
-
-  /* 读取 translations */
-  translations: props.editingWord?.translations
-    ? Object.entries(props.editingWord.translations).map(([key, val]) => ({
-        key: key || crypto.randomUUID(),
-        translation: val.translation || '',
-
-        // searchTexts 解析
-        searchTexts: Array.isArray(val.searchTexts) ? val.searchTexts : [],
-        searchTextsText: Array.isArray(val.searchTexts)
-          ? val.searchTexts.join(', ')
-          : '',
-
-        posArray: val.posArray || [],
-        definition: val.definition || { source: '', target: '' },
-        context: val.context || { source: '', target: '' }
+  _id: props.editingTranslation?._id || null,
+  sourceLang: props.editingTranslation?.sourceLang || '',
+  targetLang: props.editingTranslation?.targetLang || '',
+  sourceText: props.editingTranslation?.sourceText || '',
+  lemma: props.editingTranslation?.lemma || '',
+  lemma_id: props.editingTranslation?.lemma_id || null,
+  root: props.editingTranslation?.root || '',
+  description: props.editingTranslation?.description || '',
+  status: props.editingTranslation?.status || 'draft',
+  created_by: props.editingTranslation?.created_by || '',
+  updated_by: props.editingTranslation?.updated_by || '',
+  translations: props.editingTranslation?.translations
+    ? props.editingTranslation.translations.map(t => ({
+        key: t.key || crypto.randomUUID(),
+        translation: t.translation || '',
+        searchTexts: t.searchTexts || [],
+        searchTextsText: (t.searchTexts || []).join(', '),
+        posArray: t.posArray || [],
+        definition: t.definition || { source: '', target: '' },
+        context: t.context || { source: '', target: '' }
       }))
     : []
 })
 
-const lemmaSuggestions = ref([])
-let debounceTimer = null
-const sourceExists = ref(null)
-const checkingSource = ref(false)
-
-function getLangLabel(code) {
-  const map = { zh: '中文', en: '英文', tg: '塔吉克语', ru: '俄语' }
-  return map[code] || code || '语言'
-}
-
-function onInputLemma(query) {
-  clearTimeout(debounceTimer)
-  if (!query?.trim()) return (lemmaSuggestions.value = [])
-  debounceTimer = setTimeout(async () => {
-    try {
-      const res = await api.searchLemmas(query)
-      lemmaSuggestions.value = res.data || []
-    } catch {
-      lemmaSuggestions.value = []
-    }
-  }, 250)
-}
-
-function selectLemma(lemma) {
-  form.value.lemma = lemma.lemma
-  form.value.lemma_id = lemma._id
-  form.value.root = lemma.root || ''
-  form.value.description = lemma.description || ''
-  lemmaSuggestions.value = []
-}
+/*
+|--------------------------------------------------------------------------
+|    ★ 核心逻辑：检查 sourceText 是否被占用
+|--------------------------------------------------------------------------
+| 后端返回: { exists: true/false, source_text_id: "xxx" }
+| 逻辑：
+|   1. 编辑模式下，如果返回 source_text_id === 当前 _id → 不算冲突
+|   2. 新增模式 或 返回 source_text_id ≠ 当前 _id → 视为冲突
+*/
+const sourceTextExists = ref(false)
+const checkingSourceText = ref(false)
 
 async function checkSourceExists() {
   const txt = form.value.sourceText.trim()
-  if (!txt) return
-  checkingSource.value = true
+  if (!txt) {
+    sourceTextExists.value = false
+    return
+  }
+
+  checkingSourceText.value = true
   try {
-    const res = await api.findBySourceText(txt)
-    sourceExists.value = !!res.data
-  } finally {
-    checkingSource.value = false
-  }
-}
+    const res = await api.checkSourceTextExists(txt)
+    const exists = !!res.data.exists
+    const foundId = res.data.source_text_id || null
 
-function addTranslation() {
-  form.value.translations.push({
-    key: crypto.randomUUID(),
-    translation: '',
-    searchTexts: [],
-    searchTextsText: '',
-    posArray: [],
-    definition: { source: '', target: '' },
-    context: { source: '', target: '' }
-  })
-}
-
-function removeTranslation(index) {
-  form.value.translations.splice(index, 1)
-}
-
-/** 监听语言切换，清空 translations 对应字段 **/
-watch(
-  () => [form.value.sourceLang, form.value.targetLang],
-  ([newSource, newTarget], [oldSource, oldTarget]) => {
-    if (newSource !== oldSource || newTarget !== oldTarget) {
-      form.value.translations.forEach(t => {
-        t.definition.source = ''
-        t.definition.target = ''
-        t.context.source = ''
-        t.context.target = ''
-      })
+    if (!exists) {
+      // 未被占用
+      sourceTextExists.value = false
+    } else {
+      // 已存在
+      if (form.value._id && foundId === form.value._id) {
+        // 编辑模式：自己就是自己 → 不算重复
+        sourceTextExists.value = false
+      } else {
+        // 新增模式 或 编辑时撞到别的词条
+        sourceTextExists.value = true
+      }
     }
+  } catch (err) {
+    console.error('检查 sourceText 出错:', err)
+    sourceTextExists.value = false
+  } finally {
+    checkingSourceText.value = false
   }
-)
+}
 
+/*
+|--------------------------------------------------------------------------
+| 保存逻辑：若冲突（sourceTextExists=true），则禁止提交
+|--------------------------------------------------------------------------
+*/
 async function saveWord() {
-  // 保存前先把 searchTextsText 拆成数组去重清洗
-  for (const t of form.value.translations) {
+  if (sourceTextExists.value || checkingSourceText.value) {
+    alert('原文已存在，无法保存')
+    return
+  }
+
+  // 处理 searchTexts
+  form.value.translations.forEach(t => {
     t.searchTexts = Array.from(
       new Set(
         (t.searchTextsText || '')
@@ -339,20 +345,233 @@ async function saveWord() {
           .filter(Boolean)
       )
     )
-  }
+  })
 
   const payload = {
     ...form.value,
-    translations: form.value.translations.reduce((acc, t) => {
-      acc[t.key] = t
-      return acc
-    }, {})
+    updated_by: userStore.username || 'system',
+    translations: form.value.translations.map(t => ({
+      key: t.key,
+      translation: t.translation,
+      searchTexts: t.searchTexts,
+      posArray: t.posArray,
+      definition: t.definition,
+      context: t.context
+    }))
   }
 
-  if (form.value._id) await api.updateWord(form.value._id, payload)
-  else await api.addWord(payload)
+  try {
+    if (!form.value._id) {
+      payload.created_by = userStore.username || 'system'
+      await api.addTranslation(payload)
+    } else {
+      await api.updateTranslation(form.value._id, payload)
+    }
 
-  emit('saved')
-  emit('close')
+    emit('saved')
+    emit('close')
+  } catch (err) {
+    console.error('保存失败:', err)
+    alert('保存失败: ' + (err?.response?.data?.detail || err?.message))
+  }
+}
+
+/*
+|--------------------------------------------------------------------------
+| Lemma 下拉选择相关逻辑 - 根据实际API响应调整
+|--------------------------------------------------------------------------
+*/
+const lemmaSuggestions = ref([])
+const lemmaLoading = ref(false)
+const showLemmaDropdown = ref(false)
+const highlightedLemmaIndex = ref(-1)
+let debounceTimer = null
+const lemmaInputRef = ref(null)
+const lemmaDropdownRef = ref(null)
+
+// 监听键盘事件
+function onLemmaKeydown(event) {
+  if (!showLemmaDropdown.value || !lemmaSuggestions.value.length) return
+
+  switch (event.key) {
+    case 'ArrowDown':
+      event.preventDefault()
+      highlightedLemmaIndex.value =
+        highlightedLemmaIndex.value < lemmaSuggestions.value.length - 1
+          ? highlightedLemmaIndex.value + 1
+          : 0
+      scrollToHighlightedItem()
+      break
+    case 'ArrowUp':
+      event.preventDefault()
+      highlightedLemmaIndex.value =
+        highlightedLemmaIndex.value > 0
+          ? highlightedLemmaIndex.value - 1
+          : lemmaSuggestions.value.length - 1
+      scrollToHighlightedItem()
+      break
+    case 'Enter':
+      event.preventDefault()
+      if (highlightedLemmaIndex.value >= 0) {
+        selectLemma(lemmaSuggestions.value[highlightedLemmaIndex.value])
+      } else if (lemmaSuggestions.value.length > 0) {
+        // 如果没有高亮项但有结果，选择第一个
+        selectLemma(lemmaSuggestions.value[0])
+      }
+      break
+    case 'Escape':
+      hideLemmaDropdown()
+      break
+    case 'Tab':
+      // Tab 键时如果有高亮项就选择
+      if (highlightedLemmaIndex.value >= 0 && !event.shiftKey) {
+        event.preventDefault()
+        selectLemma(lemmaSuggestions.value[highlightedLemmaIndex.value])
+      }
+      break
+  }
+}
+
+// 滚动到高亮项
+function scrollToHighlightedItem() {
+  nextTick(() => {
+    const dropdown = lemmaDropdownRef.value
+    const items = dropdown?.querySelectorAll('div[class*="px-3"]')
+    if (items && items[highlightedLemmaIndex.value]) {
+      items[highlightedLemmaIndex.value].scrollIntoView({
+        block: 'nearest',
+        behavior: 'smooth'
+      })
+    }
+  })
+}
+
+// 输入处理 - 简化版
+function onInputLemma(query) {
+  clearTimeout(debounceTimer)
+  highlightedLemmaIndex.value = -1
+
+  const trimmedQuery = query?.trim()
+  if (!trimmedQuery) {
+    lemmaSuggestions.value = []
+    hideLemmaDropdown()
+    return
+  }
+
+  if (trimmedQuery.length < 2) {
+    lemmaSuggestions.value = []
+    hideLemmaDropdown()
+    return
+  }
+
+  lemmaLoading.value = true
+  showLemmaDropdown.value = true
+
+  debounceTimer = setTimeout(async () => {
+    try {
+      const res = await api.searchLemmas(trimmedQuery)
+
+      // 直接使用返回的数组
+      lemmaSuggestions.value = res || []
+
+      if (lemmaSuggestions.value.length > 0) {
+        highlightedLemmaIndex.value = 0
+        await nextTick()
+        scrollToHighlightedItem()
+      }
+    } catch (err) {
+      console.error('搜索 lemma 失败:', err)
+      lemmaSuggestions.value = []
+    } finally {
+      lemmaLoading.value = false
+    }
+  }, 350)
+}
+
+// 输入框获得焦点
+function onLemmaFocus() {
+  if (lemmaSuggestions.value.length > 0 && form.value.lemma.trim()) {
+    showLemmaDropdown.value = true
+  } else if (form.value.lemma.trim().length >= 2) {
+    // 如果输入框有内容且长度足够，重新搜索
+    onInputLemma(form.value.lemma)
+  }
+}
+
+// 输入框失去焦点
+function onLemmaBlur() {
+  // 延迟隐藏下拉框，以便点击选项能正常触发
+  setTimeout(() => {
+    hideLemmaDropdown()
+  }, 150)
+}
+
+// 选择 lemma
+function selectLemma(lemma) {
+  form.value.lemma = lemma.lemma
+  form.value.lemma_id = lemma._id
+  // 根据您的API，如果没有root和description字段，可以注释掉下面两行
+  // form.value.root = lemma.root || ''
+  // form.value.description = lemma.description || ''
+  hideLemmaDropdown()
+
+  // 让输入框保持焦点
+  nextTick(() => {
+    lemmaInputRef.value?.focus()
+  })
+}
+
+// 清空 lemma
+function clearLemma() {
+  form.value.lemma = ''
+  form.value.lemma_id = null
+  form.value.root = ''
+  form.value.description = ''
+  lemmaSuggestions.value = []
+  hideLemmaDropdown()
+  lemmaInputRef.value?.focus()
+}
+
+// 隐藏下拉框
+function hideLemmaDropdown() {
+  showLemmaDropdown.value = false
+  highlightedLemmaIndex.value = -1
+}
+
+// 窗口变化时重新定位下拉框
+function handleWindowChange() {
+  if (showLemmaDropdown.value && lemmaSuggestions.value.length) {
+    nextTick(() => {
+      const input = lemmaInputRef.value
+      const dropdown = lemmaDropdownRef.value
+      if (input && dropdown) {
+        const rect = input.getBoundingClientRect()
+        dropdown.style.width = rect.width + 'px'
+        dropdown.style.left = '0px'
+      }
+    })
+  }
+}
+
+// 添加键盘事件监听
+onMounted(() => {
+  window.addEventListener('resize', handleWindowChange)
+  window.addEventListener('scroll', handleWindowChange, true)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', handleWindowChange)
+  window.removeEventListener('scroll', handleWindowChange, true)
+  clearTimeout(debounceTimer)
+})
+
+/*
+|--------------------------------------------------------------------------
+| 工具函数：语言名称
+|--------------------------------------------------------------------------
+*/
+function getLangLabel(code) {
+  const map = { zh: '中文', en: '英文', tg: '塔吉克语', ru: '俄语' }
+  return map[code] || code || '语言'
 }
 </script>

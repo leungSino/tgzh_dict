@@ -211,11 +211,11 @@ async function saveUser() {
     role: form.value.role,
     status: form.value.status,
     ...(form.value.password ? { password: form.value.password } : {}),
-    updated_by: userStore.username || '系统'
+    updated_by: userStore.username || 'system'
   }
 
   if (!form.value.id) {
-    payload.created_by = userStore.username || '系统'
+    payload.created_by = userStore.username || 'system'
     await api.addUser(payload)
   } else {
     await api.updateUser(form.value.id, payload)

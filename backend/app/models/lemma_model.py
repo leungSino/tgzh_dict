@@ -1,31 +1,21 @@
-# backend/app/models/lemma_model.py
 from pydantic import BaseModel, Field
 from typing import List, Dict, Optional
 from datetime import datetime
 from bson import ObjectId
 
 
-class PyObjectId(ObjectId):
-    @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
-
-    @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid ObjectId")
-        return ObjectId(v)
-
-
 class ExampleModel(BaseModel):
-    source: str
-    target: str
+    tg: Optional[str] = ""
+    zh: Optional[str] = ""
+    ru: Optional[str] = ""
+    en: Optional[str] = ""
     pos: Optional[List[str]] = []
-    key: Optional[str] = None  # 前端用于唯一标识（非数据库必需）
+    key: Optional[str] = None   # 前端唯一标识（不是 DB _id）
 
 
 class LemmaModel(BaseModel):
-    id: Optional[PyObjectId] = Field(alias="_id")
+
+    language: str
     lemma: str
     root: Optional[str] = None
     isRoot: bool = False

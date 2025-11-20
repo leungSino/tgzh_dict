@@ -2,11 +2,29 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .routes import auth_routes, user_routes, translation_routes, log_routes, lemma_routes
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import JSONResponse
 import os
 
 app = FastAPI(title="tgzh_dict Backend")
 
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+# 添加CORS中间件
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # 前端地址
+    allow_credentials=True,
+    allow_methods=["*"],   # GET, POST, PUT, DELETE, OPTIONS
+    allow_headers=["*"],   # Authorization, Content-Type 等
+)
+
+# 测试CORS的端点
+@app.get("/test-cors")
+async def test_cors():
+    return JSONResponse({"message": "CORS test successful", "timestamp": "now"})
+
+# 全局OPTIONS处理器
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    return JSONResponse(content={}, status_code=200)
 
 app.include_router(auth_routes.router)
 app.include_router(user_routes.router)

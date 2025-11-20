@@ -4,84 +4,102 @@
     @close="$emit('close')"
   >
     <form @submit.prevent="saveLemma" class="space-y-6">
+
       <!-- 语言种类 -->
       <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
+        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          源语言
+        </label>
         <LangSelector v-model="form.language" class="w-full" />
       </div>
+
       <!-- 原型词 -->
       <div class="relative">
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          原型词
+        </label>
         <input
           type="text"
           v-model="form.lemma"
-          @input="onInput(form.lemma)"
+          @blur="checkLemmaExists"
           placeholder="输入原型词（如 навиштан）"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700
+                 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
-        <ul
-          v-if="suggestions.length"
-          class="absolute z-20 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 w-full rounded-md shadow-lg mt-1 max-h-44 overflow-auto"
-        >
-          <li
-            v-for="s in suggestions"
-            :key="s"
-            @click="selectSuggestion(s)"
-            class="px-3 py-2 hover:bg-blue-100 dark:hover:bg-blue-700 cursor-pointer"
-          >
-            {{ s }}
-          </li>
-        </ul>
+        <span v-if="checkingLemma" class="ml-2 text-sm text-gray-500">检查中…</span>
+        <span v-else-if="lemmaExists" class="ml-2 text-sm text-red-600 dark:text-red-400">
+          已存在该原型词
+        </span>
       </div>
 
       <!-- 词根 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词根</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          词根
+        </label>
         <input
           v-model="form.root"
           type="text"
           placeholder="词根（如 навис）"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700
+                 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <!-- 是否根词 -->
       <div class="flex items-center space-x-2">
-        <input type="checkbox" v-model="form.isRoot" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"/>
+        <input
+          type="checkbox"
+          v-model="form.isRoot"
+          class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+        />
         <span class="text-gray-800 dark:text-white">是否根词</span>
       </div>
 
       <!-- 词性 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
-        <PosSelector v-model="form.posArray" class="w-full"/>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          词性
+        </label>
+        <PosSelector v-model="form.posArray" class="w-full" />
       </div>
 
-      <!-- 释义（多语言） - 自动根据源语言隐藏对应项 -->
+      <!-- 释义 -->
       <div class="space-y-3">
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">释义（多语言）</label>
-
+        <label class="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-300">
+          释义
+        </label>
         <div v-for="lang in otherLangs" :key="lang">
+          <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+            {{ langLabel[lang] }} 释义
+          </label>
           <input
             v-model="form.definitions[lang]"
-            :placeholder="langLabel[lang] + '释义'"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+            :placeholder="'输入' + langLabel[lang] + '释义'"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700
+                   text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
           />
         </div>
       </div>
 
       <!-- 动词变位 -->
       <div>
-        <label class="block mb-2 font-semibold text-gray-800 dark:text-white">动词变位</label>
+        <label class="block mb-2 font-semibold text-gray-800 dark:text-white">
+          动词变位
+        </label>
         <div class="space-y-3">
-          <div v-for="(forms, tense) in form.conjugations" :key="tense">
+          <div v-for="tense in Object.keys(form.conjugations)" :key="tense">
             <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
               {{ tenseLabels[tense] }}
             </label>
             <textarea
-              v-model="form.conjugations[tenseStr(tense)]"
-              placeholder="以逗号分隔多个变位，如 навиштам, навиштӣ, навишт ..."
-              class="w-full border rounded-md px-3 py-2 h-16 resize-none bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+              v-model="form.conjugations[tense]"
+              placeholder="以逗号分隔多个变位，如 навиштам, навиштӣ ..."
+              class="w-full border rounded-md px-3 py-2 h-16 resize-none bg-white dark:bg-gray-700
+                     text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                     focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -89,13 +107,14 @@
 
       <!-- 示例句 -->
       <div>
-        <label class="block mb-2 font-semibold text-gray-800 dark:text-white">示例句</label>
-
+        <label class="block mb-2 font-semibold text-gray-800 dark:text-white">
+          示例句
+        </label>
         <div
           v-for="(ex, index) in form.examples"
           :key="ex.key"
           :class="[
-            'border rounded p-3 space-y-3 transition-all cursor-pointer',
+            'border rounded p-3 space-y-4 transition-all cursor-pointer',
             selectedExample === ex.key
               ? 'bg-blue-50 dark:bg-blue-900 border-blue-500'
               : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
@@ -103,7 +122,9 @@
           @click="selectedExample = ex.key"
         >
           <div class="flex justify-between items-center">
-            <span class="font-semibold text-gray-800 dark:text-gray-100">示例 {{ index + 1 }}</span>
+            <span class="font-semibold text-gray-800 dark:text-gray-100">
+              示例 {{ index + 1 }}
+            </span>
             <button
               type="button"
               @click.stop="removeExample(index)"
@@ -113,54 +134,77 @@
             </button>
           </div>
 
-          <!-- 塔吉克语 -->
-          <textarea v-model="ex.tg" placeholder="塔吉克语例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-          <!-- 中文 -->
-          <textarea v-model="ex.zh" placeholder="中文例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-          <!-- 俄语 -->
-          <textarea v-model="ex.ru" placeholder="俄语例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-          <!-- 英语 -->
-          <textarea v-model="ex.en" placeholder="英文例句" class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"/>
-          <!-- 词性 -->
+          <!-- 四种语言例句 -->
+          <div v-for="lng in ALL_LANGS" :key="lng">
+            <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">
+              {{ langLabel[lng] }}例句
+            </label>
+            <textarea
+              v-model="ex[lng]"
+              :placeholder="langLabel[lng] + '例句'"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700
+                     text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+            />
+          </div>
+
+          <!-- 示例词性 -->
           <div>
-            <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">词性</label>
-            <PosSelector v-model="ex.pos" class="w-full"/>
+            <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">
+              词性
+            </label>
+            <PosSelector v-model="ex.pos" class="w-full" />
           </div>
         </div>
 
-        <button type="button" @click="addExample" class="mt-3 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+        <button
+          type="button"
+          @click="addExample"
+          class="mt-3 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700"
+        >
           ➕ 添加示例句
         </button>
       </div>
 
       <!-- 派生词 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">派生词</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          派生词
+        </label>
         <input
           v-model="form.derivedStr"
           type="text"
           placeholder="派生词（用逗号分隔）"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700
+                 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <!-- 相关/反义词 -->
+      <!-- 相关词 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">相关或反义词</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          相关或反义词
+        </label>
         <input
           v-model="form.relatedStr"
           type="text"
           placeholder="如 хондан, фаҳмидан ..."
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700
+                 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                 focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
       <!-- 状态 -->
       <div>
-        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+        <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
+          状态
+        </label>
         <select
           v-model="form.status"
-          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:ring-2 focus:ring-blue-500"
+          class="w-full border rounded-md px-3 py-2 bg-white dark:bg-gray-700
+                 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600
+                 focus:ring-2 focus:ring-blue-500"
         >
           <option value="draft">草稿</option>
           <option value="published">已发布</option>
@@ -172,8 +216,21 @@
 
     <template #footer>
       <div class="flex justify-end gap-3">
-        <button type="button" @click="saveLemma" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">保存</button>
-        <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500">取消</button>
+        <button
+          type="button"
+          @click="saveLemma"
+          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+        >
+          保存
+        </button>
+
+        <button
+          type="button"
+          @click="$emit('close')"
+          class="bg-gray-400 text-white px-4 py-2 rounded-md hover:bg-gray-500"
+        >
+          取消
+        </button>
       </div>
     </template>
   </Modal>
@@ -184,18 +241,16 @@ import { ref, watch, computed } from 'vue'
 import Modal from '@/components/Modal.vue'
 import PosSelector from '@/components/PosSelector.vue'
 import LangSelector from '@/components/LangSelector.vue'
+import { useUserStore } from '@/store/userStore.js'
 import api from '@/api/api.js'
 
 const props = defineProps({ editingLemma: Object })
 const emit = defineEmits(['close', 'saved'])
+const userStore = useUserStore()
 
-// 语言标签
-const langLabel = { tg: "塔吉克语", zh: "中文", ru: "俄语", en: "英文" }
-
-// 自动计算除当前语言以外的三种
-const otherLangs = computed(() =>
-  ["tg", "zh", "ru", "en"].filter(l => l !== form.value.language)
-)
+const ALL_LANGS = ['tg', 'zh', 'ru', 'en']
+const langLabel = { tg: '塔吉克语', zh: '中文', ru: '俄语', en: '英文' }
+const tenseLabels = { past: '过去式', present: '现在式', future: '将来式' }
 
 const form = ref({
   _id: props.editingLemma?._id || null,
@@ -204,79 +259,98 @@ const form = ref({
   root: props.editingLemma?.root || '',
   isRoot: props.editingLemma?.isRoot || false,
   posArray: props.editingLemma?.pos || [],
-  definitions: props.editingLemma?.definitions || { tg:'', zh:'', ru:'', en:'' },
+  definitions: { tg: '', zh: '', ru: '', en: '', ...(props.editingLemma?.definitions || {}) },
   conjugations: props.editingLemma?.conjugations || { past: [], present: [], future: [] },
   examples: props.editingLemma?.examples?.map(e => ({ ...e, key: crypto.randomUUID(), pos: e.pos || [] })) || [],
   derivedStr: (props.editingLemma?.derived || []).join(', '),
   relatedStr: (props.editingLemma?.related || []).join(', '),
-  status: props.editingLemma?.status || 'draft'
+  status: props.editingLemma?.status || 'draft',
+  created_by: '',
+  updated_by: ''
 })
 
-/* ------------------------------------
-   自动根据语言调整 definitions（核心逻辑）
------------------------------------- */
+const selectedExample = ref(null)
+const otherLangs = computed(() => ALL_LANGS.filter(l => l !== form.value.language))
+
+// 更新 definitions 时保留已有数据
 watch(
   () => form.value.language,
-  (newLang) => {
-    const others = ["tg", "zh", "ru", "en"].filter(l => l !== newLang)
-
-    // 语言修改时清空 definitions，只保留其他三种语言
-    form.value.definitions = Object.fromEntries(
-      others.map(l => [l, ""])
-    )
+  newLang => {
+    for (const l of ALL_LANGS) {
+      if (l === newLang) form.value.definitions[l] = ''
+      else form.value.definitions[l] = form.value.definitions[l] || ''
+    }
   },
   { immediate: true }
 )
 
-const tenseLabels = { past: '过去式', present: '现在式', future: '将来式' }
-function tenseStr(t) { return t }
+const lemmaExists = ref(false)
+const checkingLemma = ref(false)
 
-const suggestions = ref([])
-let debounceTimer = null
-function onInput(query){
-  clearTimeout(debounceTimer)
-  if(!query.trim()){ suggestions.value=[]; return }
-  debounceTimer = setTimeout(async ()=>{
-    const res = await api.searchLemmas(query)
-    suggestions.value = res.data.map(i=>i.lemma)
-  },300)
+async function checkLemmaExists() {
+  const txt = form.value.lemma.trim()
+  if (!txt) { lemmaExists.value = false; return }
+
+  checkingLemma.value = true
+  try {
+    const res = await api.checkLemmaExists(txt)
+    lemmaExists.value = !!res.data.exists
+  } catch (err) {
+    console.error('检查 lemma 出错:', err)
+    lemmaExists.value = false
+  } finally { checkingLemma.value = false }
 }
-function selectSuggestion(word){ form.value.lemma=word; suggestions.value=[] }
 
-const selectedExample = ref(null)
-function addExample(){
+function addExample() {
   const newEx = { tg:'', zh:'', ru:'', en:'', pos:[], key: crypto.randomUUID() }
   form.value.examples.push(newEx)
   selectedExample.value = newEx.key
 }
-function removeExample(index){
+
+function removeExample(index) {
   const removed = form.value.examples.splice(index,1)
   if(selectedExample.value===removed[0]?.key) selectedExample.value=null
 }
 
-async function saveLemma(){
+async function saveLemma() {
+  if (lemmaExists.value) { alert("已存在该原型词，请修改后再提交"); return }
+
+  const transformedExamples = form.value.examples
+    .filter(e => e.tg || e.zh || e.ru || e.en)
+    .map(e => ({ tg:e.tg||'', zh:e.zh||'', ru:e.ru||'', en:e.en||'', pos:e.pos||[], key:e.key||null }))
+
+  const transformedConjugations = {}
+  Object.keys(form.value.conjugations).forEach(tense => {
+    const value = form.value.conjugations[tense]
+    transformedConjugations[tense] = typeof value==='string' ? value.split(',').map(s=>s.trim()).filter(Boolean) : value||[]
+  })
+
   const payload = {
     _id: form.value._id,
     language: form.value.language,
-    lemma: form.value.lemma,
-    root: form.value.root,
+    lemma: form.value.lemma.trim(),
+    root: form.value.root?.trim() || '',
     isRoot: form.value.isRoot,
-    pos: form.value.posArray,
+    pos: form.value.posArray || [],
     definitions: form.value.definitions,
-    conjugations: Object.fromEntries(
-      Object.entries(form.value.conjugations).map(([t,v])=>[t,v.toString().split(',').map(s=>s.trim()).filter(Boolean)])
-    ),
-    examples: form.value.examples.filter(e=>e.tg && e.zh).map(({tg, zh, ru, en, pos})=>({tg, zh, ru, en, pos})),
+    conjugations: transformedConjugations,
+    examples: transformedExamples,
     derived: form.value.derivedStr.split(',').map(s=>s.trim()).filter(Boolean),
     related: form.value.relatedStr.split(',').map(s=>s.trim()).filter(Boolean),
-    status: form.value.status
+    status: form.value.status,
+    updated_by: userStore.username || 'system'
   }
 
-  if(form.value._id) await api.updateLemma(form.value._id, payload)
-  else await api.addLemma(payload)
+  try {
+    if (!form.value._id){
+      payload.created_by = userStore.username || 'system'
+      await api.addLemma(payload)
+    } else await api.updateLemma(form.value._id, payload)
 
-  emit('saved')
-  emit('close')
+    emit('saved'); emit('close')
+  } catch (error) {
+    console.error('保存失败:', error)
+    alert('保存失败: ' + (error.response?.data?.detail || '请检查数据格式'))
+  }
 }
 </script>
-

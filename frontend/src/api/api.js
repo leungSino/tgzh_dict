@@ -84,6 +84,18 @@ export async function checkUsername(username) {
 }
 
 // -------------------
+// 主页面翻译接口
+// -------------------
+export async function translateText({ sourceText, sourceLang, targetLang }) {
+  const res = await api.post('/api/translate', {
+    sourceText,
+    sourceLang,
+    targetLang
+  })
+  return res.data
+}
+
+// -------------------
 // 翻译（Translations）管理
 // -------------------
 export async function getTranslations(query = '', page = 1, pageSize = 10) {
@@ -101,6 +113,10 @@ export async function getTranslations(query = '', page = 1, pageSize = 10) {
     tags: (t.tags || []).join(', ')
   }))
   return { items, total }
+}
+
+export function checkSourceTextExists(txt) {
+  return api.get('/admin/checksourcetext', { params: { source_text: txt } })
 }
 
 export async function addTranslation(data) {
@@ -122,20 +138,34 @@ export async function deleteTranslation(id) {
 // 原型词（Lemmas）管理
 // -------------------
 export async function getLemmas(query = '', page = 1, pageSize = 10) {
-  const res = await api.get('/admin/lemmas', { params: { query, page, pageSize } })
-  const list = res.data.data || res.data || []
+  const skip = (page - 1) * pageSize
+  const limit = pageSize
+  const res = await api.get('/admin/lemmas', { params: { lemma: query, skip, limit } })
+
+  const list = res.data.data || []
   const total = res.data.total ?? list.length
 
   const items = list.map(l => ({
     ...l,
-    id: l.id,
-    definition: l.definition?.zh || l.definition?.en || '-',
-    derived: (l.derived || []).join(', '),
+    id: l._id,  // 使用后端返回的 _id
+    definition: l.definitions?.zh || l.definitions?.en || '-',
+    derived: l.derived || [],   // 保持数组
+    related: l.related || [],   // 保持数组
     lemma: l.lemma || '-',
     root: l.root || '-',
-    pos: l.pos || '-'
+    pos: l.pos || []            // 保持数组
   }))
   return { items, total }
+}
+
+export async function searchLemmas(query) {
+  const res = await api.get('/admin/searchlemmas', { params: { q: query } })
+  // 返回 { data: [ {_id, lemma}, ... ] }
+  return res.data.data
+}
+
+export function checkLemmaExists(lemma) {
+  return api.get('/admin/checklemma', { params: { lemma } })
 }
 
 export async function addLemma(data) {
@@ -152,6 +182,7 @@ export async function deleteLemma(id) {
   const res = await api.delete(`/admin/lemmas/${id}`)
   return res.data
 }
+
 
 // -------------------
 // 单词（Words）管理
@@ -214,6 +245,30 @@ export async function getStats() {
   return res.data
 }
 
+// 响应拦截：处理错误
+api.interceptors.response.use(
+  response => {
+    console.log('✅ API Response:', response.config.url, response.status)
+    return response
+  },
+  error => {
+    console.error('❌ API Error:')
+    console.error('  URL:', error.config?.url)
+    console.error('  Method:', error.config?.method)
+    console.error('  Status:', error.response?.status)
+    console.error('  Headers:', error.config?.headers)
+    console.error('  Data:', error.config?.data)
+    console.error('  Response:', error.response?.data)
+
+    if (error.response?.status === 401) {
+      const store = useUserStore()
+      store.logout()
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)
+
 // -------------------
 // 默认导出
 // -------------------
@@ -239,6 +294,7 @@ export default {
 
   // Translations
   getTranslations,
+  checkSourceTextExists,
   addTranslation,
   updateTranslation,
   deleteTranslation,
@@ -248,10 +304,15 @@ export default {
   addLemma,
   updateLemma,
   deleteLemma,
+  searchLemmas,
+  checkLemmaExists,
 
   // Logs
   getLogs,
   deleteLog,
   clearLogs,
-  getStats
+  getStats,
+
+  // Home
+  translateText
 }

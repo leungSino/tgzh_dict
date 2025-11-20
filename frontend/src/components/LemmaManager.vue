@@ -85,13 +85,13 @@
       @close="closeForm"
       @saved="reloadTable"
     />
+
     <!-- 只读查看弹窗 -->
     <LemmaView
       v-if="showView"
       :viewingLemma="viewingLemma"
       @close="closeView"
     />
-
   </div>
 </template>
 
@@ -104,10 +104,9 @@ import api from '@/api/api.js'
 
 const columns = [
   { key: 'lemma', label: '原型词' },
-  { key: 'root', label: '词根' },
-  { key: 'pos', label: '词性' },
   { key: 'definition', label: '释义' },
-  { key: 'derived', label: '派生词' }
+  { key: 'root', label: '词根' }
+
 ]
 
 const tableRef = ref(null)
@@ -121,18 +120,47 @@ const viewingLemma = ref(null)
 
 /** 拉取数据 **/
 async function fetchLemmas(query, page, pageSize) {
-  const res = await api.getLemmas(query, page, pageSize)  //
-  if (res?.data) {
-    const items = res.data.map(item => ({
-      ...item,
-      id: item._id || item.id,
-      definition: item.definition?.zh || item.definition?.en || '-',
-      derived: (item.derived || []).join(', ')
-    }))
-    return { items, total: res.data.length }
+  try {
+    const res = await api.getLemmas(query, page, pageSize)
+    if (res?.items) {
+      const items = res.items.map(item => {
+        // 保证 pos 仍然是数组（编辑/查看必须用数组）
+        const posArray = Array.isArray(item.pos)
+          ? item.pos
+          : (typeof item.pos === 'string'
+            ? item.pos.split(',').map(s => s.trim()).filter(Boolean)
+            : [])
+
+        return {
+          ...item,
+
+          /** id 统一处理 **/
+          id: item._id || item.id,
+
+          /** 用于表格显示的字段：仅用于 DataTable，不影响编辑 **/
+          posDisplay: posArray.join(', ') || '-',
+
+          /** 原始 pos 必须保留为数组 **/
+          pos: posArray,
+
+          /** 释义取中文，否则英文，否则 '-' **/
+          definition: item.definitions?.zh || item.definitions?.en || '-',
+
+          /** 保证 derived, related 为数组 **/
+          derived: Array.isArray(item.derived) ? item.derived : [],
+          related: Array.isArray(item.related) ? item.related : []
+        }
+      })
+      return { items, total: res.total || items.length }
+    }
+
+    return { items: [], total: 0 }
+  } catch (err) {
+    console.error('[fetchLemmas] 拉取失败：', err)
+    return { items: [], total: 0 }
   }
-  return { items: [], total: 0 }
 }
+
 
 /** 刷新表格 **/
 function reloadTable() {

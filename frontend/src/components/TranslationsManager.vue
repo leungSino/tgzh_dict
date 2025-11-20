@@ -104,9 +104,7 @@ import api from '@/api/api.js'
 const columns = [
   { key: 'sourceText', label: '原文' },
   { key: 'targetText', label: '译文' },
-  { key: 'lemma', label: '原型词' },
-  { key: 'pos', label: '词性' },
-  { key: 'tags', label: '标签' }
+  { key: 'lemma', label: '原型词' }
 ]
 
 const tableRef = ref(null)
@@ -120,21 +118,49 @@ const viewingTranslation = ref(null)
 
 /** 获取翻译数据 **/
 async function fetchTranslations(query, page, pageSize) {
-  const res = await api.getTranslations(query, page, pageSize)
-  if (res?.data) {
-    const items = res.data.map(item => ({
-      ...item,
-      id: item._id || item.id,
-      sourceText: item.sourceText || '-',
-      targetText: Object.values(item.translations || {}).map(t => t.translation).join('; '),
-      lemma: item.lemma || '-',
-      pos: item.pos || '-',
-      tags: (item.tags || []).join(', ')
-    }))
-    return { items, total: res.data.length }
+  try {
+    const res = await api.getTranslations(query, page, pageSize)
+
+    if (res?.items) {
+      const items = res.items.map(item => {
+        // 保证 translations 仍然是数组
+        const translationsArray = Array.isArray(item.translations)
+          ? item.translations
+          : Object.values(item.translations || {})
+
+        // pos 统一为数组（编辑/查看必须用数组）
+        const posArray = Array.isArray(item.pos)
+          ? item.pos
+          : (typeof item.pos === 'string'
+            ? item.pos.split(',').map(s => s.trim()).filter(Boolean)
+            : [])
+
+        return {
+          ...item,
+
+          /** id 统一处理 **/
+          id: item._id || item.id,
+
+          /** 用于表格显示的字段：仅用于 DataTable，不影响编辑 **/
+          targetText: translationsArray.map(t => t.translation).join('; ') || '-',
+
+          /** 原始 pos 必须保留为数组 **/
+          pos: posArray,
+
+          /** 保证 translations 数组结构完整 **/
+          translations: translationsArray
+        }
+      })
+      return { items, total: res.total || items.length }
+    }
+
+    return { items: [], total: 0 }
+  } catch (err) {
+    console.error('[fetchTranslations] 拉取失败：', err)
+    return { items: [], total: 0 }
   }
-  return { items: [], total: 0 }
 }
+
 
 
 /** 刷新表格 **/

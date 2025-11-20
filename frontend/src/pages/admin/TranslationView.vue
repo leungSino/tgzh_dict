@@ -3,151 +3,174 @@
     title="查看翻译词条"
     @close="$emit('close')"
   >
-    <form class="space-y-4">
-      <!-- 源语言 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
-        <LangSelector v-model="form.sourceLang" class="w-full" :disabled="true" />
-      </div>
+    <div class="space-y-4">
+      <!-- 基本信息网格布局 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- 源语言 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ getLangLabel(form.sourceLang) }}
+          </div>
+        </div>
 
-      <!-- 目标语言 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">目标语言</label>
-        <LangSelector v-model="form.targetLang" class="w-full" :disabled="true" />
+        <!-- 目标语言 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">目标语言</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ getLangLabel(form.targetLang) }}
+          </div>
+        </div>
       </div>
 
       <!-- 原文 -->
       <div class="flex flex-col mb-4">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原文</label>
-        <input
-          type="text"
-          v-model="form.sourceText"
-          class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-          readonly
-        />
+        <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+          {{ form.sourceText }}
+        </div>
       </div>
 
-      <!-- lemma -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
-        <input
-          type="text"
-          v-model="form.lemma"
-          class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-          readonly
-        />
-      </div>
+      <!-- 原型词和词根 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- lemma -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ form.lemma || '-' }}
+          </div>
+        </div>
 
-      <!-- 词根 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词根</label>
-        <input
-          v-model="form.root"
-          type="text"
-          class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-          readonly
-        />
+        <!-- 词根 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词根</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ form.root || '-' }}
+          </div>
+        </div>
       </div>
 
       <!-- 描述 -->
       <div class="flex flex-col mb-4">
         <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">描述（释义、语法、说明）</label>
-        <textarea
-          v-model="form.description"
-          class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-          readonly
-        ></textarea>
+        <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 min-h-[80px]">
+          {{ form.description || '-' }}
+        </div>
       </div>
 
-      <!-- 状态 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
-        <input
-          type="text"
-          v-model="form.status"
-          class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-          readonly
-        />
+      <!-- 状态和创建信息 -->
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <!-- 状态 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ getStatusLabel(form.status) }}
+          </div>
+        </div>
+
+        <!-- 创建者 -->
+        <div class="flex flex-col">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">创建者</label>
+          <div class="border rounded px-3 py-2 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+            {{ form.created_by || '-' }}
+          </div>
+        </div>
       </div>
 
       <!-- 多条翻译 -->
-      <div
-        v-for="(t, index) in form.translations"
-        :key="t.key || `translation-${index}`"
-        class="border rounded p-3 space-y-3 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-      >
-        <div class="font-semibold">翻译 {{ index + 1 }}</div>
+      <div class="space-y-4">
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white">翻译内容</h3>
 
-        <!-- 翻译文本 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">翻译文本</label>
-          <input
-            v-model="t.translation"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          />
-        </div>
+        <div
+          v-for="(t, index) in form.translations"
+          :key="t.key"
+          class="border rounded p-4 space-y-4 bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600"
+        >
+          <div class="flex justify-between items-center pb-2 border-b border-gray-200 dark:border-gray-700">
+            <span class="font-semibold text-gray-900 dark:text-white">翻译 {{ index + 1 }}</span>
+          </div>
 
-        <!-- 搜索文本 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">搜索匹配词（searchTexts）</label>
-          <input
-            v-model="t.searchTextsText"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          />
-        </div>
+          <!-- 翻译文本 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">翻译文本</label>
+            <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+              {{ t.translation || '-' }}
+            </div>
+          </div>
 
-        <!-- 词性 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
-          <PosSelector v-model="t.posArray" class="w-full" :disabled="true" />
-        </div>
+          <!-- 搜索文本 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">搜索匹配词</label>
+            <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+              {{ t.searchTexts?.join(', ') || '-' }}
+            </div>
+          </div>
 
-        <!-- 源语言释义 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ getLangLabel(form.sourceLang) }} 释义</label>
-          <input
-            v-model="t.definition.source"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          />
-        </div>
+          <!-- 词性 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
+            <div class="flex flex-wrap gap-2 p-2 border rounded bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600">
+              <span v-if="!t.posArray?.length" class="text-gray-400 text-sm">-</span>
+              <span
+                v-for="pos in t.posArray"
+                :key="pos"
+                class="px-2 py-1 bg-blue-100 dark:bg-blue-800 text-blue-800 dark:text-blue-200 rounded text-sm"
+              >
+                {{ pos }}
+              </span>
+            </div>
+          </div>
 
-        <!-- 目标语言释义 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ getLangLabel(form.targetLang) }} 释义</label>
-          <input
-            v-model="t.definition.target"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          />
-        </div>
+          <!-- 释义和例句 -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 源语言 -->
+            <div class="space-y-3">
+              <h4 class="font-medium text-gray-900 dark:text-white">{{ getLangLabel(form.sourceLang) }}</h4>
 
-        <!-- 源语言例句 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ getLangLabel(form.sourceLang) }} 例句</label>
-          <textarea
-            v-model="t.context.source"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          ></textarea>
-        </div>
+              <div class="flex flex-col">
+                <label class="mb-1 text-sm text-gray-600 dark:text-gray-400">释义</label>
+                <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+                  {{ t.definition?.source || '-' }}
+                </div>
+              </div>
 
-        <!-- 目标语言例句 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">{{ getLangLabel(form.targetLang) }} 例句</label>
-          <textarea
-            v-model="t.context.target"
-            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-white border-gray-300 dark:border-gray-600"
-            readonly
-          ></textarea>
+              <div class="flex flex-col">
+                <label class="mb-1 text-sm text-gray-600 dark:text-gray-400">例句</label>
+                <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 min-h-[60px]">
+                  {{ t.context?.source || '-' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- 目标语言 -->
+            <div class="space-y-3">
+              <h4 class="font-medium text-gray-900 dark:text-white">{{ getLangLabel(form.targetLang) }}</h4>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-sm text-gray-600 dark:text-gray-400">释义</label>
+                <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600">
+                  {{ t.definition?.target || '-' }}
+                </div>
+              </div>
+
+              <div class="flex flex-col">
+                <label class="mb-1 text-sm text-gray-600 dark:text-gray-400">例句</label>
+                <div class="border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 min-h-[60px]">
+                  {{ t.context?.target || '-' }}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </form>
+    </div>
 
     <template #footer>
-      <button type="button" @click="$emit('close')" class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500">
+      <button
+        type="button"
+        @click="$emit('close')"
+        class="bg-gray-400 text-white px-4 py-2 rounded hover:bg-gray-500 transition-colors"
+      >
         关闭
       </button>
     </template>
@@ -157,12 +180,11 @@
 <script setup>
 import { ref, watch } from 'vue'
 import Modal from '@/components/Modal.vue'
-import LangSelector from '@/components/LangSelector.vue'
-import PosSelector from '@/components/PosSelector.vue'
 
 const props = defineProps({ viewingWord: Object })
 const emit = defineEmits(['close'])
 
+// 表单数据
 const form = ref({
   _id: null,
   sourceLang: '',
@@ -173,6 +195,7 @@ const form = ref({
   root: '',
   description: '',
   status: 'draft',
+  created_by: '',
   translations: []
 })
 
@@ -181,6 +204,7 @@ watch(
   () => props.viewingWord,
   (newWord) => {
     if (!newWord) return
+
     form.value = {
       _id: newWord._id || null,
       sourceLang: newWord.sourceLang || '',
@@ -191,15 +215,15 @@ watch(
       root: newWord.root || '',
       description: newWord.description || '',
       status: newWord.status || 'draft',
-      translations: newWord.translations
-        ? Object.entries(newWord.translations).map(([key, val], index) => ({
-            key: key || `translation-${index}`,
-            translation: val.translation || '',
-            searchTexts: Array.isArray(val.searchTexts) ? val.searchTexts : [],
-            searchTextsText: Array.isArray(val.searchTexts) ? val.searchTexts.join(', ') : '',
-            posArray: val.posArray || [],
-            definition: val.definition || { source: '', target: '' },
-            context: val.context || { source: '', target: '' }
+      created_by: newWord.created_by || '',
+      translations: Array.isArray(newWord.translations)
+        ? newWord.translations.map((t, index) => ({
+            key: t.key || `translation-${index}`,
+            translation: t.translation || '',
+            searchTexts: Array.isArray(t.searchTexts) ? t.searchTexts : [],
+            posArray: Array.isArray(t.posArray) ? t.posArray : [],
+            definition: t.definition || { source: '', target: '' },
+            context: t.context || { source: '', target: '' }
           }))
         : []
     }
@@ -207,8 +231,18 @@ watch(
   { immediate: true }
 )
 
+// 工具函数
 function getLangLabel(code) {
   const map = { zh: '中文', en: '英文', tg: '塔吉克语', ru: '俄语' }
-  return map[code] || code || '语言'
+  return map[code] || code || '未知语言'
+}
+
+function getStatusLabel(status) {
+  const map = {
+    draft: '草稿',
+    published: '发布',
+    archived: '存档'
+  }
+  return map[status] || status
 }
 </script>
