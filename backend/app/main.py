@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from .routes import auth_routes, user_routes, translation_routes, log_routes, lemma_routes
+from .routes import auth_routes, user_routes, translation_routes, log_routes, lemma_routes, home_routes
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
 import os
@@ -31,6 +31,7 @@ app.include_router(user_routes.router)
 app.include_router(translation_routes.router)
 app.include_router(lemma_routes.router)
 app.include_router(log_routes.router)
+app.include_router(home_routes.router)
 
 # Serve frontend build if exists (optional)
 frontend_dist = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")

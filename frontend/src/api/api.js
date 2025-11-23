@@ -95,6 +95,11 @@ export async function translateText({ sourceText, sourceLang, targetLang }) {
   return res.data
 }
 
+export async function getLemmaByLemma(lemma) {
+  return await api.get('/api/getlemma', { params: { lemma } })
+}
+
+
 // -------------------
 // 翻译（Translations）管理
 // -------------------
@@ -246,7 +251,7 @@ export async function getStats() {
 }
 
 // 响应拦截：处理错误
-api.interceptors.response.use(
+/*api.interceptors.response.use(
   response => {
     console.log('✅ API Response:', response.config.url, response.status)
     return response
@@ -260,6 +265,19 @@ api.interceptors.response.use(
     console.error('  Data:', error.config?.data)
     console.error('  Response:', error.response?.data)
 
+    if (error.response?.status === 401) {
+      const store = useUserStore()
+      store.logout()
+      window.location.href = '/login'
+    }
+    return Promise.reject(error)
+  }
+)*/
+
+// 响应拦截器：只处理 401
+api.interceptors.response.use(
+  response => response,
+  error => {
     if (error.response?.status === 401) {
       const store = useUserStore()
       store.logout()
@@ -314,5 +332,6 @@ export default {
   getStats,
 
   // Home
-  translateText
+  translateText,
+  getLemmaByLemma
 }

@@ -1,6 +1,8 @@
 from typing import List
 from ..models.home_model import TranslateResult
 from ..db import translations_col
+from ..db import lemmas_col
+from ..models.lemma_model import LemmaModel
 
 
 async def home_translate_text(
@@ -24,12 +26,14 @@ async def home_translate_text(
 
         lemma = doc.get("lemma", "")
         root = doc.get("root", "")
+        description = doc.get("description", "")
 
         for t in doc.get("translations", []):
             results.append(
                 TranslateResult(
                     translation=t.get("translation", ""),
                     pos=", ".join(t.get("posArray", [])),
+                    description=description,
                     lemma=lemma,
                     root=root,
                     originalSentence=t.get("context", {}).get("source", ""),
@@ -47,13 +51,16 @@ async def home_translate_text(
         async for doc in cursor:
             lemma = doc.get("lemma", "")
             root = doc.get("root", "")
+            description = doc.get("description", "")
+            sourceText = doc.get("sourceText", "")
 
             for t in doc.get("translations", []):
                 if source_text in t.get("searchTexts", []):
                     results.append(
                         TranslateResult(
-                            translation=t.get("context", {}).get("source", t.get("translation", "")),
+                            translation=sourceText,
                             pos=", ".join(t.get("posArray", [])),
+                            description = description,
                             lemma=lemma,
                             root=root,
                             originalSentence=t.get("context", {}).get("source", ""),
@@ -62,3 +69,8 @@ async def home_translate_text(
                     )
 
     return results
+
+
+async def get_lemma_by_lemma_service(lemma: str) -> dict | None:
+    result = await lemmas_col.find_one({"lemma": lemma})
+    return result
