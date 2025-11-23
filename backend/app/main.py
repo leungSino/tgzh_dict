@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .routes import auth_routes, user_routes, translation_routes, log_routes, lemma_routes, home_routes
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse
+from .logger import logger
 import os
 
 app = FastAPI(title="tgzh_dict Backend")
@@ -20,6 +21,11 @@ app.add_middleware(
 @app.get("/test-cors")
 async def test_cors():
     return JSONResponse({"message": "CORS test successful", "timestamp": "now"})
+
+@app.get("/ping")
+async def ping():
+    logger.info("Ping 请求被调用")
+    return {"msg": "pong"}
 
 # 全局OPTIONS处理器
 @app.options("/{path:path}")
