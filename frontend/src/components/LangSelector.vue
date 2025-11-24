@@ -54,7 +54,7 @@ const emit = defineEmits(['update:modelValue'])
 
 const options = {
   zh: '中文',
-  tg: '塔吉克语',
+  tg: '塔语',
   ru: '俄语',
   en: '英语'
 }

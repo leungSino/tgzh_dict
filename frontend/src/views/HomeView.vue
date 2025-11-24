@@ -3,22 +3,26 @@
     <div class="flex-grow flex flex-col items-center px-4 py-8 md:px-8 lg:px-16 mt-16">
       <div class="w-full max-w-4xl rounded-2xl shadow-lg p-6 md:p-8 bg-white dark:bg-gray-800 transition-all">
 
-        <!-- 语言选择 -->
-        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
-          <div class="flex items-center gap-3">
-            <div class="w-40">
+        <!-- 语言选择（已适配手机端） -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-6 w-full">
+          <div class="flex items-center gap-3 w-full md:w-auto">
+
+            <!-- 左侧语言选择 -->
+            <div class="flex-1 min-w-[120px] max-w-[180px]">
               <LangSelector v-model="sourceLang" />
             </div>
 
+            <!-- 语言切换按钮 -->
             <button
               @click="swapLanguages"
-              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition"
+              class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition flex-shrink-0"
               title="切换语言"
             >
               🔄
             </button>
 
-            <div class="w-40">
+            <!-- 右侧语言选择 -->
+            <div class="flex-1 min-w-[120px] max-w-[180px]">
               <LangSelector v-model="targetLang" />
             </div>
           </div>
@@ -42,7 +46,7 @@
           </button>
         </div>
 
-        <!-- 翻译结果 -->
+        <!-- 翻译结果展示 -->
         <div v-if="translatedResults.length" class="mt-6 border-t border-gray-200 dark:border-gray-700 pt-4 text-lg leading-relaxed text-gray-700 dark:text-gray-200">
           <div v-for="(res, index) in translatedResults" :key="index" class="mb-4 p-2 border border-gray-300 dark:border-gray-700 rounded-lg">
             <p><strong>翻译:</strong> {{ res.translation }}</p>
@@ -50,29 +54,20 @@
             <p><strong>词性:</strong> {{ res.pos }}</p>
             <p>
               <strong>原型词:</strong>
-
-              <!-- 可点击原型词 -->
               <button
                 class="text-blue-600 dark:text-blue-400 hover:underline"
                 @click="openLemma(res.lemma)"
               >
                 {{ res.lemma }}
               </button>
-
-              <!-- 只有 lemma 存在时才显示提示文字 -->
-              <span
-                v-if="res.lemma"
-                class="text-sm text-gray-500 dark:text-gray-400 ml-1 italic"
-              >
-                (可点击查看)
-              </span>
+              <span v-if="res.lemma" class="text-sm text-gray-500 dark:text-gray-400 ml-1 italic">(可点击查看)</span>
             </p>
             <p><strong>词根:</strong> {{ res.root }}</p>
             <p><strong>例句:</strong> {{ res.originalSentence }} → {{ res.translatedSentence }}</p>
           </div>
         </div>
 
-        <!-- 只读查看弹窗 -->
+        <!-- 原型词只读查看弹窗 -->
         <LemmaView
           v-if="showView"
           :viewingLemma="viewingLemma"
@@ -98,54 +93,83 @@ const translatedResults = ref([])
 const showView = ref(false)
 const viewingLemma = ref(null)
 
-/** 查看操作 **/
+/* 查看 lemma 详情 */
 async function openLemma(lemmaText) {
   try {
     const res = await api.getLemmaByLemma(lemmaText)
 
     if (res.data.success && res.data.data) {
-      viewingLemma.value = res.data.data   // 赋值 lemma 对象
-      showView.value = true                // 展示弹窗
+      viewingLemma.value = res.data.data
+      showView.value = true
     } else {
-      alert("未找到该原型词的详细信息")
+      alert('未找到该原型词的详细信息')
     }
   } catch (error) {
     console.error(error)
-    alert("查询原型词信息失败")
+    alert('查询原型词信息失败')
   }
 }
-
 
 function closeView() {
   showView.value = false
   viewingLemma.value = null
 }
 
+/* 切换语言 */
 const swapLanguages = () => {
   const temp = sourceLang.value
   sourceLang.value = targetLang.value
   targetLang.value = temp
 }
 
+/* 翻译 */
 const translateText = async () => {
   if (!inputText.value.trim()) return
-  translatedResults.value = [] // 清空上一次结果
+  translatedResults.value = []
 
   try {
     const res = await api.translateText({
       sourceText: inputText.value,
       sourceLang: sourceLang.value,
-      targetLang: targetLang.value
+      targetLang: targetLang.value,
     })
 
     if (res.success) {
       translatedResults.value = res.results
     } else {
-      translatedResults.value = [{ translation: '翻译失败', description: '', pos: '', lemma: '', root: '', originalSentence: '', translatedSentence: '' }]
+      translatedResults.value = [
+        {
+          translation: '翻译失败',
+          description: '',
+          pos: '',
+          lemma: '',
+          root: '',
+          originalSentence: '',
+          translatedSentence: '',
+        },
+      ]
     }
   } catch (err) {
     console.error(err)
-    translatedResults.value = [{ translation: '请求错误，请检查后端', description: '', pos: '', lemma: '', root: '', originalSentence: '', translatedSentence: '' }]
+    translatedResults.value = [
+      {
+        translation: '请求错误，请检查后端',
+        description: '',
+        pos: '',
+        lemma: '',
+        root: '',
+        originalSentence: '',
+        translatedSentence: '',
+      },
+    ]
   }
 }
 </script>
+
+<style>
+/* 修复 iOS/安卓下 select 被放大变形的问题 */
+select {
+  -webkit-appearance: none;
+  appearance: none;
+}
+</style>

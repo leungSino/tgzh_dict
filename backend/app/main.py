@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from .logger import logger
 import os
 
+logger.info("FastAPI 启动完成（包含 reload 子进程）")
 app = FastAPI(title="tgzh_dict Backend")
 
 # 添加CORS中间件
