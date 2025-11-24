@@ -5,6 +5,7 @@
       :columns="columns"
       :fetchData="fetchLemmas"
       :pageSize="10"
+      class="overflow-x-auto"
     >
       <!-- 顶部操作 -->
       <template #actions>
@@ -106,7 +107,6 @@ const columns = [
   { key: 'lemma', label: '原型词' },
   { key: 'definition', label: '释义' },
   { key: 'root', label: '词根' }
-
 ]
 
 const tableRef = ref(null)
@@ -211,10 +211,101 @@ onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
 </script>
 
 <style scoped>
+/* 添加表格容器样式，确保在小屏幕时可以水平滚动 */
+:deep(.data-table-container) {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* 确保表格有最小宽度，避免在小屏幕时过度压缩 */
+:deep(table) {
+  min-width: 500px; /* 根据列数调整这个值 */
+  width: 100%;
+}
+
+/* 表格列宽设置，确保重要列有足够空间 */
+:deep(th),
+:deep(td) {
+  min-width: 120px; /* 每列最小宽度 */
+  white-space: nowrap; /* 防止文本换行 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 原型词列可以更宽一些 */
+:deep(th:nth-child(1)),
+:deep(td:nth-child(1)) { /* 原型词列 */
+  min-width: 150px;
+  max-width: 200px;
+}
+
+:deep(th:nth-child(2)),
+:deep(td:nth-child(2)) { /* 释义列 */
+  min-width: 200px;
+  max-width: 300px;
+}
+
+:deep(th:nth-child(3)),
+:deep(td:nth-child(3)) { /* 词根列 */
+  min-width: 120px;
+  max-width: 150px;
+}
+
+/* 操作列固定宽度 */
+:deep(th:last-child),
+:deep(td:last-child) {
+  min-width: 140px;
+  max-width: 140px;
+}
+
+/* 滚动条样式统一 */
+:deep(.data-table-container)::-webkit-scrollbar {
+  height: 8px;
+}
+
+:deep(.data-table-container)::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+:deep(.data-table-container)::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+:deep(.data-table-container)::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 暗黑模式滚动条 */
+@media (prefers-color-scheme: dark) {
+  :deep(.data-table-container)::-webkit-scrollbar-track {
+    background: #374151;
+  }
+
+  :deep(.data-table-container)::-webkit-scrollbar-thumb {
+    background: #6b7280;
+  }
+
+  :deep(.data-table-container)::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+  }
+}
+
 @media (max-width: 640px) {
   .flex-wrap {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  /* 移动端表格最小宽度调整 */
+  :deep(table) {
+    min-width: 450px;
+  }
+
+  :deep(th),
+  :deep(td) {
+    min-width: 100px;
   }
 }
 

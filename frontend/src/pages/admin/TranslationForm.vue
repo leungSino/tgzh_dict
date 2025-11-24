@@ -2,19 +2,24 @@
   <Modal
     :title="form._id ? '编辑翻译词条' : '新增翻译词条'"
     @close="$emit('close')"
+    class="translation-form-modal"
   >
-    <form @submit.prevent="saveWord" class="space-y-4">
+    <!-- 修改1：只保留外部滚动容器 -->
+    <form @submit.prevent="saveWord" class="space-y-4 max-h-[70vh] overflow-y-auto px-1">
 
-      <!-- 源语言 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
-        <LangSelector v-model="form.sourceLang" class="w-full" />
-      </div>
+      <!-- 修改2：将语言选择器改为网格布局 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 源语言 -->
+        <div class="flex flex-col mb-4">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">源语言</label>
+          <LangSelector v-model="form.sourceLang" class="w-full" />
+        </div>
 
-      <!-- 目标语言 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">目标语言</label>
-        <LangSelector v-model="form.targetLang" class="w-full" />
+        <!-- 目标语言 -->
+        <div class="flex flex-col mb-4">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">目标语言</label>
+          <LangSelector v-model="form.targetLang" class="w-full" />
+        </div>
       </div>
 
       <!-- 原文 -->
@@ -52,179 +57,188 @@
         </p>
       </div>
 
-<!-- 原型词 lemma -->
-<div class="flex flex-col mb-4 relative">
-  <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
-  <div class="relative">
-    <input
-      ref="lemmaInputRef"
-      type="text"
-      v-model="form.lemma"
-      @input="onInputLemma(form.lemma)"
-      @focus="onLemmaFocus"
-      @blur="onLemmaBlur"
-      @keydown="onLemmaKeydown"
-      placeholder="输入原型词以搜索联想"
-      class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-    />
+      <!-- 修改3：将原型词和词根改为网格布局 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 原型词 lemma -->
+        <div class="flex flex-col mb-4 relative">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">原型词（lemma）</label>
+          <div class="relative">
+            <input
+              ref="lemmaInputRef"
+              type="text"
+              v-model="form.lemma"
+              @input="onInputLemma(form.lemma)"
+              @focus="onLemmaFocus"
+              @blur="onLemmaBlur"
+              @keydown="onLemmaKeydown"
+              placeholder="输入原型词以搜索联想"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
 
-    <!-- 加载指示器 -->
-    <div
-      v-if="lemmaLoading"
-      class="absolute right-2 top-1/2 -translate-y-1/2"
-    >
-      <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
-    </div>
+            <!-- 加载指示器 -->
+            <div
+              v-if="lemmaLoading"
+              class="absolute right-2 top-1/2 -translate-y-1/2"
+            >
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-500"></div>
+            </div>
 
-    <!-- 清空按钮 -->
-    <button
-      v-if="form.lemma && !lemmaLoading"
-      @click="clearLemma"
-      class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-    >
-      ×
-    </button>
-  </div>
+            <!-- 清空按钮 -->
+            <button
+              v-if="form.lemma && !lemmaLoading"
+              @click="clearLemma"
+              class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              ×
+            </button>
+          </div>
 
-  <!-- 下拉框 -->
-  <div
-    v-if="showLemmaDropdown && lemmaSuggestions.length"
-    ref="lemmaDropdownRef"
-    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
-    style="top: 100%;"
-  >
-    <div
-      v-for="(s, index) in lemmaSuggestions"
-      :key="s._id"
-      @mousedown="selectLemma(s)"
-      :class="[
-        'px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors',
-        index === highlightedLemmaIndex
-          ? 'bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-200'
-          : 'hover:bg-gray-50 dark:hover:bg-gray-700'
-      ]"
-    >
-      <div class="font-medium text-gray-900 dark:text-white">{{ s.lemma }}</div>
-      <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-        ID: {{ s._id }}
-      </div>
-    </div>
-  </div>
+          <!-- 下拉框 -->
+          <div
+            v-if="showLemmaDropdown && lemmaSuggestions.length"
+            ref="lemmaDropdownRef"
+            class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto"
+            style="top: 100%;"
+          >
+            <div
+              v-for="(s, index) in lemmaSuggestions"
+              :key="s._id"
+              @mousedown="selectLemma(s)"
+              :class="[
+                'px-3 py-2 cursor-pointer border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors',
+                index === highlightedLemmaIndex
+                  ? 'bg-blue-100 dark:bg-blue-700 text-blue-800 dark:text-blue-200'
+                  : 'hover:bg-gray-50 dark:hover:bg-gray-700'
+              ]"
+            >
+              <div class="font-medium text-gray-900 dark:text-white">{{ s.lemma }}</div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                ID: {{ s._id }}
+              </div>
+            </div>
+          </div>
 
-  <!-- 无结果提示 -->
-  <div
-    v-if="showLemmaDropdown && !lemmaLoading && lemmaSuggestions.length === 0 && form.lemma.trim()"
-    class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg"
-    style="top: 100%;"
-  >
-    <div class="px-3 py-4 text-gray-500 dark:text-gray-400 text-sm text-center">
-      未找到匹配的原型词
-    </div>
-  </div>
-</div>
+          <!-- 无结果提示 -->
+          <div
+            v-if="showLemmaDropdown && !lemmaLoading && lemmaSuggestions.length === 0 && form.lemma.trim()"
+            class="absolute z-50 w-full mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg"
+            style="top: 100%;"
+          >
+            <div class="px-3 py-4 text-gray-500 dark:text-gray-400 text-sm text-center">
+              未找到匹配的原型词
+            </div>
+          </div>
+        </div>
 
-      <!-- 词根 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词根</label>
-        <input
-          v-model="form.root"
-          type="text"
-          placeholder="词根"
-          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-        />
-      </div>
-
-      <!-- 描述 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">描述（释义、语法、说明）</label>
-        <textarea
-          v-model="form.description"
-          placeholder="描述（释义、语法、说明）"
-          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-        />
+        <!-- 词根 -->
+        <div class="flex flex-col mb-4">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词根</label>
+          <input
+            v-model="form.root"
+            type="text"
+            placeholder="词根"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
+        </div>
       </div>
 
-      <!-- 状态 -->
-      <div class="flex flex-col mb-4">
-        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
-        <select
-          v-model="form.status"
-          class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-        >
-          <option value="draft">草稿</option>
-          <option value="published">发布</option>
-          <option value="archarchived">存档</option>
-        </select>
+      <!-- 修改4：将描述和状态改为网格布局 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- 描述 -->
+        <div class="flex flex-col mb-4">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">描述（释义、语法、说明）</label>
+          <textarea
+            v-model="form.description"
+            placeholder="描述（释义、语法、说明）"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          />
+        </div>
+
+        <!-- 状态 -->
+        <div class="flex flex-col mb-4">
+          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">状态</label>
+          <select
+            v-model="form.status"
+            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
+          >
+            <option value="draft">草稿</option>
+            <option value="published">发布</option>
+            <option value="archarchived">存档</option>
+          </select>
+        </div>
       </div>
 
       <!-- 多条翻译 -->
-      <div
-        v-for="(t, index) in form.translations"
-        :key="t.key"
-        @click="selectedTranslationIndex = index"
-        :class="[
-          'border rounded p-3 space-y-3 transition-colors cursor-pointer',
-          selectedTranslationIndex === index
-            ? 'bg-blue-100 dark:bg-blue-800 border-blue-500'
-            : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600'
-        ]"
-      >
-        <div class="flex justify-between items-center">
-          <span class="font-semibold">翻译 {{ index + 1 }}</span>
-          <button type="button" @click.stop="removeTranslation(index)" class="text-red-500 hover:text-red-700">&times;</button>
-        </div>
+      <!-- 修改5：移除翻译区域内部的滚动条，只保留外部滚动 -->
+      <div>
+        <div
+          v-for="(t, index) in form.translations"
+          :key="t.key"
+          :class="[
+            'border rounded p-3 space-y-3 transition-colors cursor-pointer mb-4',
+            selectedTranslationIndex === t.key
+              ? 'bg-blue-100 dark:bg-blue-800 border-blue-500'
+              : 'bg-gray-50 dark:bg-gray-800 border-gray-300 dark:border-gray-600'
+          ]"
+          @click="selectedTranslationIndex = t.key"
+        >
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">翻译 {{ index + 1 }}</span>
+            <button type="button" @click.stop="removeTranslationEx(index)" class="text-red-500 hover:text-red-700">&times;</button>
+          </div>
 
-        <!-- 翻译文本 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">翻译文本</label>
-          <input
-            v-model="t.translation"
-            placeholder="翻译文本"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          />
-        </div>
-
-        <!-- 搜索文本 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">搜索匹配词</label>
-          <input
-            v-model="t.searchTextsText"
-            placeholder="多个词用逗号分隔"
-            class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
-          />
-        </div>
-
-        <!-- 词性 -->
-        <div class="flex flex-col">
-          <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
-          <PosSelector v-model="t.posArray" class="w-full" placeholder="请选择词性" />
-        </div>
-
-        <!-- 源语言释义 & 例句 -->
-        <div v-for="lang of [form.sourceLang, form.targetLang]" :key="lang">
-          <div class="mb-2">
-            <label class="mb-1 text-sm">{{ getLangLabel(lang) }}释义</label>
+          <!-- 翻译文本 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">翻译文本</label>
             <input
-              v-model="t.definition[lang === form.sourceLang ? 'source' : 'target']"
-              :placeholder="getLangLabel(lang) + '释义'"
-              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              v-model="t.translation"
+              placeholder="翻译文本"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
             />
           </div>
-          <div>
-            <label class="mb">
-              {{ getLangLabel(lang) }}例句
-            </label>
-            <textarea
-              v-model="t.context[lang === form.sourceLang ? 'source' : 'target']"
-              :placeholder="getLangLabel(lang) + '例句'"
-              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+
+          <!-- 搜索文本 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">搜索匹配词</label>
+            <input
+              v-model="t.searchTextsText"
+              placeholder="多个词用逗号分隔"
+              class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white border-gray-300 dark:border-gray-600"
             />
+          </div>
+
+          <!-- 词性 -->
+          <div class="flex flex-col">
+            <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词性</label>
+            <PosSelector v-model="t.posArray" class="w-full" placeholder="请选择词性" />
+          </div>
+
+          <!-- 源语言释义 & 例句 -->
+          <div v-for="lang of [form.sourceLang, form.targetLang]" :key="lang">
+            <div class="mb-2">
+              <label class="mb-1 text-sm">{{ getLangLabel(lang) }}释义</label>
+              <input
+                v-model="t.definition[lang === form.sourceLang ? 'source' : 'target']"
+                :placeholder="getLangLabel(lang) + '释义'"
+                class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              />
+            </div>
+            <div>
+              <label class="mb">
+                {{ getLangLabel(lang) }}例句
+              </label>
+              <textarea
+                v-model="t.context[lang === form.sourceLang ? 'source' : 'target']"
+                :placeholder="getLangLabel(lang) + '例句'"
+                class="w-full border rounded px-3 py-2 bg-white dark:bg-gray-700 text-gray-800 dark:text-white"
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <!-- 添加翻译 -->
-      <button type="button" @click="addTranslation" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
+      <button type="button" @click="addTranslationEx" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">
         ➕ 添加翻译
       </button>
     </form>
@@ -253,6 +267,10 @@ const userStore = useUserStore()
 
 const selectedTranslationIndex = ref(null)
 
+function generateUniqueId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 9)
+}
+
 const form = ref({
   _id: props.editingTranslation?._id || null,
   sourceLang: props.editingTranslation?.sourceLang || '',
@@ -267,7 +285,7 @@ const form = ref({
   updated_by: props.editingTranslation?.updated_by || '',
   translations: props.editingTranslation?.translations
     ? props.editingTranslation.translations.map(t => ({
-        key: t.key || crypto.randomUUID(),
+        key: t.key || generateUniqueId(),
         translation: t.translation || '',
         searchTexts: t.searchTexts || [],
         searchTextsText: (t.searchTexts || []).join(', '),
@@ -375,6 +393,25 @@ async function saveWord() {
     alert('保存失败: ' + (err?.response?.data?.detail || err?.message))
   }
 }
+
+function addTranslationEx() {
+  const newEx = {
+    key: generateUniqueId(),
+    translation:'',
+    searchTexts:'',
+    posArray:[],
+    definition:{},
+    context:{}
+  }
+  form.value.translations.push(newEx)
+  selectedTranslationIndex.value = newEx.key
+}
+
+function removeTranslationEx(index) {
+  const removed = form.value.translations.splice(index,1)
+  if(selectedTranslationIndex.value===removed[0]?.key) selectedTranslationIndex.value=null
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -575,3 +612,57 @@ function getLangLabel(code) {
   return map[code] || code || '语言'
 }
 </script>
+
+<!-- 修改6：只保留外部滚动条样式 -->
+<style scoped>
+/* 滚动条样式统一 */
+.translation-form-modal :deep(.modal-content) {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.translation-form-modal :deep(.modal-content)::-webkit-scrollbar {
+  width: 6px;
+}
+
+.translation-form-modal :deep(.modal-content)::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.translation-form-modal :deep(.modal-content)::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.translation-form-modal :deep(.modal-content)::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+  .translation-form-modal :deep(.modal-container) {
+    margin: 1rem;
+    max-height: calc(100vh - 2rem);
+  }
+}
+
+/* 暗黑模式滚动条 */
+@media (prefers-color-scheme: dark) {
+  .translation-form-modal :deep(.modal-content) {
+    scrollbar-color: #4a5568 #2d3748;
+  }
+
+  .translation-form-modal :deep(.modal-content)::-webkit-scrollbar-track {
+    background: #2d3748;
+  }
+
+  .translation-form-modal :deep(.modal-content)::-webkit-scrollbar-thumb {
+    background: #4a5568;
+  }
+
+  .translation-form-modal :deep(.modal-content)::-webkit-scrollbar-thumb:hover {
+    background: #718096;
+  }
+}
+</style>
