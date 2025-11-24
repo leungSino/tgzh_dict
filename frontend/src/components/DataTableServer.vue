@@ -6,7 +6,9 @@
         v-model="searchQuery"
         type="text"
         placeholder="搜索..."
-        class="border rounded px-3 py-2 w-64 focus:outline-none focus:ring-2 focus:ring-blue-500
+        class="border rounded px-3 py-2
+               w-full sm:w-64
+               focus:outline-none focus:ring-2 focus:ring-blue-500
                bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700
                dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
       />
@@ -41,7 +43,6 @@
       </table>
     </div>
 
-    <!-- 分页 -->
     <div class="flex flex-wrap justify-between items-center mt-4 space-y-2 sm:space-y-0">
       <div class="flex items-center space-x-2">
         <button
