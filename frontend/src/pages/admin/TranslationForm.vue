@@ -4,10 +4,10 @@
     @close="$emit('close')"
     class="translation-form-modal"
   >
-    <!-- 修改1：只保留外部滚动容器 -->
+    <!-- 只保留外部滚动容器 -->
     <form @submit.prevent="saveWord" class="space-y-4 max-h-[70vh] overflow-y-auto px-1">
 
-      <!-- 修改2：将语言选择器改为网格布局 -->
+      <!-- 将语言选择器改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 源语言 -->
         <div class="flex flex-col mb-4">
@@ -57,7 +57,17 @@
         </p>
       </div>
 
-      <!-- 修改3：将原型词和词根改为网格布局 -->
+      <!-- 是否原型词 -->
+      <div class="flex items-center space-x-2">
+        <input
+          type="checkbox"
+          v-model="form.isLemma"
+          class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500"
+        />
+        <span class="text-gray-800 dark:text-white">是否原型词</span>
+      </div>
+
+      <!-- 将原型词和词根改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 原型词 lemma -->
         <div class="flex flex-col mb-4 relative">
@@ -142,7 +152,7 @@
         </div>
       </div>
 
-      <!-- 修改4：将描述和状态改为网格布局 -->
+      <!-- 将描述和状态改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 描述 -->
         <div class="flex flex-col mb-4">
@@ -169,7 +179,7 @@
       </div>
 
       <!-- 多条翻译 -->
-      <!-- 修改5：移除翻译区域内部的滚动条，只保留外部滚动 -->
+      <!-- 移除翻译区域内部的滚动条，只保留外部滚动 -->
       <div>
         <div
           v-for="(t, index) in form.translations"
@@ -276,6 +286,7 @@ const form = ref({
   sourceLang: props.editingTranslation?.sourceLang || '',
   targetLang: props.editingTranslation?.targetLang || '',
   sourceText: props.editingTranslation?.sourceText || '',
+  isLemma: props.editingTranslation?.isLemma || false,
   lemma: props.editingTranslation?.lemma || '',
   lemma_id: props.editingTranslation?.lemma_id || null,
   root: props.editingTranslation?.root || '',

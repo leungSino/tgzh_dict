@@ -31,6 +31,14 @@
         </div>
       </div>
 
+      <!-- 是否原型词 -->
+      <div class="flex flex-col">
+        <label class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">词类</label>
+        <div class="py-2 px-3 border rounded bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
+          {{ form.isLemma ? '原型词' : '非原型词' }}
+        </div>
+      </div>
+
       <!-- 原型词和词根 -->
       <div class="grid grid-cols-2 gap-4 mb-4">
         <!-- lemma -->
@@ -190,6 +198,7 @@ const form = ref({
   sourceLang: '',
   targetLang: '',
   sourceText: '',
+  isLemma: false,
   lemma: '',
   lemma_id: null,
   root: '',
@@ -210,6 +219,7 @@ watch(
       sourceLang: newWord.sourceLang || '',
       targetLang: newWord.targetLang || '',
       sourceText: newWord.sourceText || '',
+      isLemma: newWord.isLemma || false,
       lemma: newWord.lemma || '',
       lemma_id: newWord.lemma_id || null,
       root: newWord.root || '',

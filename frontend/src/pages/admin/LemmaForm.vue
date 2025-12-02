@@ -1,11 +1,11 @@
 <template>
-  <!-- 修改1：添加modal类名用于样式控制 -->
+  <!-- 添加modal类名用于样式控制 -->
   <Modal
     :title="form._id ? '编辑原型词' : '新增原型词'"
     @close="$emit('close')"
     class="translation-form-modal"
   >
-    <!-- 修改2：添加滚动容器 -->
+    <!-- 添加滚动容器 -->
     <form @submit.prevent="saveLemma" class="space-y-6 max-h-[70vh] overflow-y-auto px-1">
 
       <!-- 语言种类 -->
@@ -16,7 +16,7 @@
         <LangSelector v-model="form.language" class="w-full" />
       </div>
 
-      <!-- 修改3：将原型词和词根改为网格布局 -->
+      <!-- 将原型词和词根改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 原型词 -->
         <div class="relative">
@@ -54,7 +54,7 @@
         </div>
       </div>
 
-      <!-- 修改4：将是否根词和词性改为网格布局 -->
+      <!-- 将是否根词和词性改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 是否根词 -->
         <div class="flex items-center space-x-2">
@@ -80,7 +80,7 @@
         <label class="block mb-1 text-sm font-semibold text-gray-800 dark:text-gray-300">
           释义
         </label>
-        <!-- 修改5：将释义改为网格布局 -->
+        <!-- 将释义改为网格布局 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div v-for="lang in otherLangs" :key="lang">
             <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -102,7 +102,7 @@
           动词变位
         </label>
         <div class="space-y-3">
-          <!-- 修改6：将动词变位改为网格布局 -->
+          <!-- 将动词变位改为网格布局 -->
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div v-for="tense in Object.keys(form.conjugations)" :key="tense">
               <label class="block mb-1 text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -149,7 +149,7 @@
             </button>
           </div>
 
-          <!-- 修改7：将四种语言例句改为网格布局 -->
+          <!-- 将四种语言例句改为网格布局 -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div v-for="lng in ALL_LANGS" :key="lng">
               <label class="block mb-1 text-sm text-gray-700 dark:text-gray-300">
@@ -182,7 +182,7 @@
         </button>
       </div>
 
-      <!-- 修改8：将派生词和相关词改为网格布局 -->
+      <!-- 将派生词和相关词改为网格布局 -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <!-- 派生词 -->
         <div>

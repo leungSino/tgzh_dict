@@ -29,6 +29,7 @@ class TranslationModel(BaseModel):
     sourceLang: str
     targetLang: str
     sourceText: str
+    isLemma: bool = False
     lemma: Optional[str] = None
     lemma_id: Optional[str] = None
     root: Optional[str] = None
