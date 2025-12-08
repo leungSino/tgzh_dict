@@ -7,79 +7,74 @@
       :pageSize="10"
       class="overflow-x-auto"
     >
-      <!-- 顶部操作 -->
       <template #actions>
         <button
           @click="openForm()"
-          class="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600 transition-all"
+          class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
-          ➕ 新增
+          新增原型词
         </button>
       </template>
 
-      <!-- 每行操作按钮 -->
       <template #row-actions="{ row }">
-        <!-- 桌面端 -->
-        <div class="hidden sm:flex flex-wrap gap-2">
+        <div class="hidden sm:flex flex-wrap gap-2 justify-start">
           <button
             @click="viewForm(row)"
-            class="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 transition-all"
+            class="flex-1 min-w-[60px] px-2 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-center"
           >
             查看
           </button>
+
           <button
             @click="openForm(row)"
-            class="px-2 py-1 bg-yellow-500 text-white rounded hover:bg-yellow-600 dark:bg-yellow-600 dark:hover:bg-yellow-700 transition-all"
+            class="flex-1 min-w-[60px] px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-center"
           >
             编辑
           </button>
+
           <button
             @click="deleteLemma(row.id)"
-            class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 transition-all"
+            class="flex-1 min-w-[60px] px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-center"
           >
             删除
           </button>
         </div>
 
-        <!-- 移动端 -->
         <div class="sm:hidden relative">
           <button
-            @click.stop="toggleMenu(row.id)"
-            class="px-2 py-1 bg-gray-400 text-white rounded hover:bg-gray-500 dark:bg-gray-600 dark:hover:bg-gray-500 transition-all"
+            @click="toggleMenu(row)"
+            class="px-2 py-1 bg-gray-400 text-white rounded hover:bg-gray-500"
           >
             ⋮
           </button>
-          <transition name="fade">
-            <div
-              v-if="expandedRowId === row.id"
-              class="absolute right-0 mt-1 bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-xl shadow-lg z-10 flex flex-col py-1"
-              style="min-width: 120px;"
+          <div
+            v-if="row.id === expandedRowId"
+            class="absolute right-0 mt-1 bg-white border rounded shadow-lg z-10 flex flex-wrap gap-1 p-1"
+            style="min-width: 120px;"
+          >
+            <button
+              @click="viewForm(row); closeMenu()"
+              class="flex-1 min-w-[60px] px-2 py-1 text-white bg-green-500 hover:bg-green-600 rounded text-center"
             >
-              <button
-                @click="viewForm(row); closeMenu()"
-                class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-              >
-                🔍 查看
-              </button>
-              <button
-                @click="openForm(row); closeMenu()"
-                class="px-3 py-2 text-sm text-left hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200"
-              >
-                ✏️ 编辑
-              </button>
-              <button
-                @click="deleteLemma(row.id); closeMenu()"
-                class="px-3 py-2 text-sm text-left hover:bg-red-100 dark:hover:bg-red-700 text-red-600 dark:text-red-400"
-              >
-                🗑 删除
-              </button>
-            </div>
-          </transition>
+              查看
+            </button>
+            <button
+              @click="openForm(row); closeMenu()"
+              class="flex-1 min-w-[60px] px-2 py-1 text-white bg-blue-500 hover:bg-blue-600 rounded text-center"
+            >
+              编辑
+            </button>
+            <button
+              @click="deleteLemma(row.id); closeMenu()"
+              class="flex-1 min-w-[60px] px-2 py-1 text-white bg-red-500 hover:bg-red-600 rounded text-center"
+            >
+              删除
+            </button>
+          </div>
         </div>
       </template>
     </DataTableServer>
 
-    <!-- 编辑/新增弹窗 -->
     <LemmaForm
       v-if="showForm"
       :editingLemma="editingLemma"
@@ -87,7 +82,6 @@
       @saved="reloadTable"
     />
 
-    <!-- 只读查看弹窗 -->
     <LemmaView
       v-if="showView"
       :viewingLemma="viewingLemma"
@@ -109,22 +103,24 @@ const columns = [
   { key: 'root', label: '词根' }
 ]
 
-const tableRef = ref(null)
-const tableWrapper = ref(null)
 const showForm = ref(false)
-const editingLemma = ref(null)
-const expandedRowId = ref(null)
-
 const showView = ref(false)
+const editingLemma = ref(null)
 const viewingLemma = ref(null)
 
-/** 拉取数据 **/
+const tableWrapper = ref(null)
+const tableRef = ref(null)
+
+// 控制移动端展开行
+const expandedRowId = ref(null)
+
+/** 异步拉取数据（DataTableServer 调用） **/
 async function fetchLemmas(query, page, pageSize) {
   try {
     const res = await api.getLemmas(query, page, pageSize)
     if (res?.items) {
       const items = res.items.map(item => {
-        // 保证 pos 仍然是数组（编辑/查看必须用数组）
+        // 保证 pos 仍然是数组
         const posArray = Array.isArray(item.pos)
           ? item.pos
           : (typeof item.pos === 'string'
@@ -133,52 +129,57 @@ async function fetchLemmas(query, page, pageSize) {
 
         return {
           ...item,
-
-          /** id 统一处理 **/
+          // id 统一处理
           id: item._id || item.id,
-
-          /** 用于表格显示的字段：仅用于 DataTable，不影响编辑 **/
+          // 用于表格显示的字段
           posDisplay: posArray.join(', ') || '-',
-
-          /** 原始 pos 必须保留为数组 **/
+          // 原始 pos 必须保留为数组
           pos: posArray,
-
-          /** 释义取中文，否则英文，否则 '-' **/
+          // 释义取中文，否则英文，否则 '-'
           definition: item.definitions?.zh || item.definitions?.en || '-',
-
-          /** 保证 derived, related 为数组 **/
+          // 保证 derived, related 为数组
           derived: Array.isArray(item.derived) ? item.derived : [],
           related: Array.isArray(item.related) ? item.related : []
         }
       })
       return { items, total: res.total || items.length }
     }
-
     return { items: [], total: 0 }
   } catch (err) {
-    console.error('[fetchLemmas] 拉取失败：', err)
+    console.error('加载原型词失败：', err)
     return { items: [], total: 0 }
   }
 }
-
 
 /** 刷新表格 **/
 function reloadTable() {
   tableRef.value?.reload()
 }
 
-/** 查看操作 **/
+/** 切换移动端菜单显示 **/
+function toggleMenu(row) {
+  expandedRowId.value = expandedRowId.value === row.id ? null : row.id
+}
+function closeMenu() {
+  expandedRowId.value = null
+}
+function handleClickOutside(e) {
+  if (tableWrapper.value && !tableWrapper.value.contains(e.target)) {
+    expandedRowId.value = null
+  }
+}
+
+/** 查看 **/
 function viewForm(row) {
   viewingLemma.value = row
   showView.value = true
 }
-
 function closeView() {
   showView.value = false
   viewingLemma.value = null
 }
 
-/** 打开/关闭表单 **/
+/** 新增/编辑 **/
 function openForm(lemma = null) {
   editingLemma.value = lemma
   showForm.value = true
@@ -195,126 +196,68 @@ async function deleteLemma(id) {
   reloadTable()
 }
 
-/** 移动端菜单控制 **/
-function toggleMenu(id) {
-  expandedRowId.value = expandedRowId.value === id ? null : id
-}
-function closeMenu() {
-  expandedRowId.value = null
-}
-function handleClickOutside(e) {
-  if (!tableWrapper.value.contains(e.target)) closeMenu()
-}
-
-onMounted(() => document.addEventListener('click', handleClickOutside))
-onBeforeUnmount(() => document.removeEventListener('click', handleClickOutside))
+onMounted(() => {
+  document.addEventListener('click', handleClickOutside)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
-/* 添加表格容器样式，确保在小屏幕时可以水平滚动 */
-:deep(.data-table-container) {
-  overflow-x: auto;
-  width: 100%;
-}
-
-/* 确保表格有最小宽度，避免在小屏幕时过度压缩 */
-:deep(table) {
-  min-width: 500px; /* 根据列数调整这个值 */
-  width: 100%;
-}
-
-/* 表格列宽设置，确保重要列有足够空间 */
-:deep(th),
-:deep(td) {
-  min-width: 120px; /* 每列最小宽度 */
-  white-space: nowrap; /* 防止文本换行 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* 原型词列可以更宽一些 */
-:deep(th:nth-child(1)),
-:deep(td:nth-child(1)) { /* 原型词列 */
-  min-width: 150px;
-  max-width: 200px;
-}
-
-:deep(th:nth-child(2)),
-:deep(td:nth-child(2)) { /* 释义列 */
-  min-width: 200px;
-  max-width: 300px;
-}
-
-:deep(th:nth-child(3)),
-:deep(td:nth-child(3)) { /* 词根列 */
-  min-width: 120px;
-  max-width: 150px;
-}
-
-/* 操作列固定宽度 */
-:deep(th:last-child),
-:deep(td:last-child) {
-  min-width: 140px;
-  max-width: 140px;
-}
-
-/* 滚动条样式统一 */
-:deep(.data-table-container)::-webkit-scrollbar {
-  height: 8px;
-}
-
-:deep(.data-table-container)::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 4px;
-}
-
-:deep(.data-table-container)::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
-}
-
-:deep(.data-table-container)::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-/* 暗黑模式滚动条 */
-@media (prefers-color-scheme: dark) {
-  :deep(.data-table-container)::-webkit-scrollbar-track {
-    background: #374151;
-  }
-
-  :deep(.data-table-container)::-webkit-scrollbar-thumb {
-    background: #6b7280;
-  }
-
-  :deep(.data-table-container)::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
-  }
-}
-
 @media (max-width: 640px) {
   .flex-wrap {
     flex-direction: column;
     align-items: stretch;
   }
-
-  /* 移动端表格最小宽度调整 */
-  :deep(table) {
-    min-width: 450px;
-  }
-
-  :deep(th),
-  :deep(td) {
-    min-width: 100px;
-  }
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s ease;
+/* --- 表格样式优化：处理长文本和移动端滚动 --- */
+
+/* 强制表格容器横向滚动 */
+:deep(.data-table-container) {
+  overflow-x: auto;
+  width: 100%;
 }
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
+
+/* 确保表格有最小宽度，防止在小屏幕时过度压缩 */
+:deep(table) {
+  min-width: 600px; /* 最小宽度确保内容不会被挤压 */
+  width: 100%;
+}
+
+/* 对所有单元格应用基本宽度 */
+:deep(th),
+:deep(td) {
+  min-width: 100px; /* 默认最小宽度 */
+  max-width: 250px;
+}
+
+/* 只对非操作列应用文本截断（:not(:last-child)） */
+/* 操作列必须排除，否则绝对定位的菜单会被剪裁 */
+:deep(td:not(:last-child)) {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 确保操作列（:last-child）保持可见，并固定宽度 */
+:deep(th:last-child),
+:deep(td:last-child) {
+  /* CRITICAL FIX: 确保菜单可以超出单元格边界显示 */
+  overflow: visible;
+  /* 允许按钮文本换行，以防按钮被挤压 */
+  white-space: normal;
+  min-width: 140px;
+  max-width: 140px;
+}
+
+/* 针对长文本列设置特定宽度 */
+/* **翻译管理页面**：针对第二列（译文）设置更宽的限制 */
+/* **原型词管理页面**：针对第二列（释义）设置更宽的限制 */
+:deep(th:nth-child(2)),
+:deep(td:nth-child(2)) {
+  min-width: 200px;
+  max-width: 300px;
 }
 </style>
