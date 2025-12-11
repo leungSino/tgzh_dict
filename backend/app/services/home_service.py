@@ -82,7 +82,7 @@ async def home_translate_text(
 
                             type="word",
                             brief="",
-                            meanings=[t.get("translation", "")],
+                            meanings=[t.get("definition", {}).get("target", "")],
                             forms=None,
                             examples=[]
                         )
